@@ -158,6 +158,15 @@ and expression position runtime = function
     in
     expression' runtime e
 
+  | FunCall (FunId "block_create", [size; init]) ->
+    failwith "Student! This is your job!"
+
+  | FunCall (FunId "block_get", [location; index]) ->
+    failwith "Student! This is your job!"
+
+  | FunCall (FunId "block_set", [location; index; e]) ->
+    failwith "Student! This is your job!"
+
   | FunCall (FunId s, [e1; e2]) when is_binary_primitive s ->
     binop runtime s e1 e2
 

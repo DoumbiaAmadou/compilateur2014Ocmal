@@ -55,6 +55,9 @@ rule token = parse
   | "undefine"            { UNDEFINE }
   | "getvariable"         { GETVARIABLE }
   | "exit"                { EXIT }
+  | "block_create"        { BLOCKCREATE }
+  | "block_get"           { BLOCKGET }
+  | "block_set"           { BLOCKSET }
   | identifier as i       { ID i }
   | '@' (identifier as i) { LABEL i }
 
