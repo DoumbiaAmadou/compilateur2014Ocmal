@@ -1,0 +1,9 @@
+true : use_unix
+
+<src/common>    : include
+<src/utilities> : include
+<src/datix>     : include
+<src/fopix>     : include
+<src/stackix>   : include
+<src/hopix>     : include
+<src/lib/pprint> : include
