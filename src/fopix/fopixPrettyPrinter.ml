@@ -64,6 +64,9 @@ and expression = function
     )
     ++ group (located expression e2)
     ++ string "end"
+  | UnknownFunCall (e, es) ->
+    string "?" ++ parens (located expression e)
+    ++ PPrintOCaml.tuple (List.map expression' es)
 
 and expression' e = expression (Position.value e)
 
@@ -77,6 +80,7 @@ and funcall f es =
 
 and literal = function
   | LInt x -> string (string_of_int x)
+  | LFun (FunId f) -> string ("&" ^ f)
 
 let to_string f x =
   let b = Buffer.create 13 in

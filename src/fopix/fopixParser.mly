@@ -4,7 +4,7 @@
 
 %}
 
-%token VAL DEF IN END IF THEN ELSE EVAL
+%token VAL DEF IN END IF THEN ELSE EVAL UPPERSAND
 %token PLUS MINUS STAR SLASH GT GTE LT LTE EQUAL
 %token LPAREN RPAREN LBRACKET RBRACKET ASSIGNS COMMA SEMICOLON EOF
 %token<int> INT
@@ -109,6 +109,10 @@ expression:
   x=INT
 {
   LInt x
+}
+| UPPERSAND f=function_identifier
+{
+  LFun f
 }
 
 %inline identifier: x=ID {
