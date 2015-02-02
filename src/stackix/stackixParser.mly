@@ -1,3 +1,4 @@
+%token BLOCKCREATE BLOCKGET BLOCKSET
 %token UJUMP JUMP SWAP CJUMP OR GETVARIABLE
 %token REMEMBER DEFINE UNDEFINE ADD MUL DIV SUB GT GTE LT LTE EQ EXIT
 %token COLON EOF
@@ -41,6 +42,9 @@ instruction:
 | LT                   { StackixAST.Binop StackixAST.LT }
 | LTE                  { StackixAST.Binop StackixAST.LTE }
 | EQ                   { StackixAST.Binop StackixAST.EQ }
+| BLOCKCREATE          { StackixAST.BlockCreate }
+| BLOCKGET             { StackixAST.BlockGet }
+| BLOCKSET             { StackixAST.BlockSet }
 | GETVARIABLE i=INT    { StackixAST.GetVariable i }
 | JUMP l=ID            { StackixAST.Jump (StackixAST.Label l) }
 | UJUMP                { StackixAST.UJump }

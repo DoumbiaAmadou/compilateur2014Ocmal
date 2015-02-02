@@ -287,6 +287,10 @@ let evaluate runtime (ast : t) =
       | Comment _ ->
         ()
 
+      | BlockCreate -> failwith "Student! This is your job!"
+      | BlockSet -> failwith "Student! This is your job!"
+      | BlockGet -> failwith "Student! This is your job!"
+
   and jump (Label x as l) =
     let block =
       try

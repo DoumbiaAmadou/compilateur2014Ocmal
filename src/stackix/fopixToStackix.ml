@@ -1,4 +1,5 @@
-(** This module implements a compiler from Fopix to Stackix. *)
+(*
+* This module implements a compiler from Fopix to Stackix. *)
 
 let error pos msg =
   Error.error "compilation" pos msg
@@ -27,6 +28,7 @@ type environment = {
   (** [context] is the list of all previously compiled definitions. *)
   context          : Target.AST.t list;
 }
+*
 
 (** Initially, the environment is empty. *)
 let initial_environment () = {
@@ -42,7 +44,8 @@ let lookup_function_label f env =
 
 (** [lookup_function_formals f env] returns the formal arguments of
     [f] in [env]. *)
-let lookup_function_formals f env =
+l
+**et lookup_function_formals f env =
   List.assoc f env.function_formals
 
 (** [fresh_function_label f] returns a fresh label starting with [f]
@@ -160,7 +163,9 @@ and expression pos env = function
     @ expression' (bind_variable env i) e2
     @ single_instruction Target.AST.Undefine
 
-  | Source.AST.IfThenElse (c, t, f) ->
+  | Source.AST.IfThenElse (c, t, f) -> 
+	expression' (bind_variable env i) e2 
+	
     failwith "Student! This is your job!"
 
   | Source.AST.FunCall (Source.AST.FunId f, [e1; e2])

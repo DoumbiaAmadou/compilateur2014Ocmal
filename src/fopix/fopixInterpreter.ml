@@ -148,15 +148,27 @@ and expression position runtime = function
   | Variable x ->
     Environment.lookup x runtime.environment
 
-  | IfThenElse (c, t, f) ->
-    failwith "Student! This is your job!"
-
+  | IfThenElse (c, t, f) -> begin 
+			    match value_as_bool  (expression' runtime c)  with 
+			    |Some true -> expression' runtime t
+			    |Some false  -> expression' runtime f 		
+			    |None -> error [position]  ("Expression :"^(FopixPrettyPrinter.to_string FopixPrettyPrinter.expression' c )^" is not a Bool expression ")
+			  end 
   | Define (x, ex, e) ->
     let v = expression' runtime ex in
     let runtime =
      { environment = Environment.bind runtime.environment (Position.value x) v }
     in
     expression' runtime e
+
+  | FunCall (FunId "block_create", [size; init]) ->
+    failwith "Student! This is your job!"
+
+  | FunCall (FunId "block_get", [location; index]) ->
+    failwith "Student! This is your job!"
+
+  | FunCall (FunId "block_set", [location; index; e]) ->
+    failwith "Student! This is your job!"
 
   | FunCall (FunId s, [e1; e2]) when is_binary_primitive s ->
     binop runtime s e1 e2
