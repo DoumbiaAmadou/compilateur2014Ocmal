@@ -28,6 +28,7 @@ and initialize_options () =
   CommandLineOptions.parse ()
 
 and initialize_languages () =
+  DatixInitialization.initialize ();
   FopixInitialization.initialize ();
   StackixInitialization.initialize ()
 
