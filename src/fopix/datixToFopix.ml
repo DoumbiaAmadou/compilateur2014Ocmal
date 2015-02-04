@@ -112,6 +112,10 @@ let translate (p : S.t) env =
          failwith "Student! This is your job!"
 
   and toplevel_pattern pos env x p =
+    (* Auxiliary function for dealing with DefineValue(p,e0):
+       The identifier x should contain at runtime the value of e0.
+       We then construct here some code to destructurate this value
+       and assign all the variables occuring in pattern p. *)
     match p with
     | S.PWildcard ->
          failwith "Student! This is your job!"
@@ -127,6 +131,12 @@ let translate (p : S.t) env =
 
 
   and pattern pos env x pat e =
+    (* Auxiliary function for dealing with patterns in Define(pat,e0,e)
+       or Case(e0,[(pat,e);...]).
+       The identifier x should contain at runtime the value of e0.
+       We then construct here some code to destructurate this value
+       and assign all the variables occuring in pattern p, before
+       launching the computation of e. *)
     match pat with
       | S.PWildcard ->
            failwith "Student! This is your job!"
