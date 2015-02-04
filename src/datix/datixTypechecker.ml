@@ -206,7 +206,7 @@ type typing_environment = TypingEnvironment.t
 
 (** The initial environment contains the type of the primitive functions. *)
 let initial_typing_environment () =
-     failwith "Student! This is your job!"
+     TypingEnvironment.empty (* TODO: add the primitive functions here *)
 
 (** [typecheck tenv ast] checks that [ast] is a well-formed program
     under the typing environment [tenv]. *)
