@@ -50,7 +50,7 @@ and identifier =
   | Id of string
 
 and formals =
-    (identifier * typ) list
+    (identifier * typ option) list
 
 and function_identifier =
   | FunId of string

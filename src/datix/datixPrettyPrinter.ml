@@ -74,7 +74,7 @@ and type_annotation = function
   | Some ty -> string ":" ++ typ ty
 
 and binding (x, ty) =
-  identifier x ++ string ":" ++ typ ty
+  identifier x ++ type_annotation ty
 
 and typ = function
   | TyIdentifier x ->

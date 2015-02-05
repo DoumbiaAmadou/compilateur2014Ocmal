@@ -77,7 +77,7 @@ fielddef:
   xs
 }
 
-binding: x=identifier COLON ty=typ
+binding: x=identifier ty=type_annotation
 {
   (x, ty)
 }
