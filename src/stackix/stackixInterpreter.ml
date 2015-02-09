@@ -51,7 +51,7 @@ module Stack : sig
       the top of it.
       Raise [EmptyStack] if there is no such element. *)
   val pop  : 'a t -> unit
-
+  val popN  : int -> 'a t -> unit
   (** [get i s] returns the i-th element of [s], counting
       from the top, i.e. 0 is top.
       Raise [UnboundStackElement i] is there is no such
@@ -99,7 +99,9 @@ end = struct
       raise EmptyStack
     | _ :: xs ->
       l := xs
-
+    let rec  popN n v = match n with 
+    |0 -> () 
+    |_ -> pop v ; popN (n-1) v 
   let get k l =
     let rec aux i = function
       | [] -> raise (UnboundStackElement k)
@@ -207,7 +209,6 @@ let evaluate runtime (ast : t) =
 
   (** The program entry point will be the first label that we cross. *)
   let entry = ref None in
-
   (** The following function goes through the program and stores
       the entry points of each basic block. (Remember that a basic block
       is a sequence of instructions, starting with a label and ended by a
@@ -225,17 +226,12 @@ let evaluate runtime (ast : t) =
       load l [Position.value i] is
   in
   load (Label "") [] ast;
-
   (** [execute_block b] goes through the instructions of [b] and
       execute each of them. *)
   let rec execute_block = function
-    | [] ->
-      ()
-    | [i] ->
-      execute_instruction i
-    | i :: is ->
-      execute_instruction i;
-      execute_block is
+    | [] ->  ()
+    | [i] -> execute_instruction i
+    | i :: is -> execute_instruction i; execute_block is
 
   (** [execute_instruction implements the semantics of the
       machine instructions. *)
@@ -251,10 +247,14 @@ let evaluate runtime (ast : t) =
 (*convertie la variable de l'entier k passere en parametre pour en fair un DInt et le mettre dans ma pile des variable*) 
       | GetVariable i ->
         Stack.(push (snd (get i variables)) values)
+
 (*convertie la variable de l'entier k passere en parametre pour en fair un DInt et le mettre dans ma pile des valeur*)
+
+(*convertie la variable de l'entier k passere en parametre pour en fair un DInt et le mettre dans ma pile des variable*)
       | Remember k ->
         Stack.push (DInt k) values
 
+(*convertie la variable de l'entier k passere en parametre pour en fair un DInt et le mettre dans ma pile des valeur*)
       | RememberLabel l ->
         Stack.push (DLabel l) values
 
@@ -287,11 +287,21 @@ let evaluate runtime (ast : t) =
 
       | Comment _ ->
         ()
+
       | BlockCreate -> (*as_lbl (Stack.get 0 values) in  RememberLabel l  ;  Stack.pop values; 
          Hashtbl.add blocks l [i]*)
         begin  match (Stack.get 0 values ) , (Stack.get 1 values) with 
           |(DInt a )  , b ->  Stack.popN 2 values; Stack.push (DLocation (Memory.allocate memory a b )) values
           |_-> failwith " type error "
+
+ (*  failwith "Student! This is your job!" *)
+
+      | BlockCreate -> (*as_lbl (Stack.get 0 values) in  RememberLabel l  ;  Stack.pop values; 
+         Hashtbl.add blocks l [i]*)
+        begin  match (Stack.get 0 values ) , (Stack.get 1 values) with 
+         |(DInt a )  , b ->  Stack.popN 2 values; Stack.push (DLocation (Memory.allocate memory a b )) values
+         |_-> failwith " type error "
+
         end 
 
       | BlockSet  -> 
@@ -305,10 +315,17 @@ let evaluate runtime (ast : t) =
       | BlockGet -> begin  match (Stack.get 0 values) ,(Stack.get 1 values)  with 
           | (DLocation l) ,( DInt  i ) -> Stack.push  ( Memory.read (Memory.dereference memory l) i) values; Stack.popN 2 values   
           |_ -> failwith "block and  int  not in the stack "
+
       end
 
   and jump (Label x as l) =
-    let block =
+
+          end
+
+      (*  failwith "Student! This is your job!" *)
+      and jump (Label x as l) =
+      
+   let block =
       try
         Hashtbl.find blocks l
       with Not_found -> error ("Unbound label " ^ x)

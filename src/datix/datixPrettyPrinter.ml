@@ -76,6 +76,7 @@ and type_annotation = function
 and binding (x, ty) =
   identifier x ++ type_annotation ty
 
+
 and typ = function
   | TyIdentifier x ->
     type_identifier x

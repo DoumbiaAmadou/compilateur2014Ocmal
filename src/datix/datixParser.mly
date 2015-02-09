@@ -76,8 +76,8 @@ fielddef:
 %inline formals: LPAREN xs=separated_list(COMMA, binding) RPAREN {
   xs
 }
-
 binding: x=identifier ty=type_annotation
+
 {
   (x, ty)
 }

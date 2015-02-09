@@ -8,13 +8,18 @@ and definition =
   | DefineValue of
       pattern located * expression located
 
+  (* FUNC : identifier{ position  , value } , formal , type option , expression Located *)
+
   | DefineFunction of
       function_identifier located
     * formals * typ option
     * expression located
 
+
+(*TYPE : identidier , definition *)
   | DefineType of
       type_identifier * type_definition
+      
 
 and expression =
   | Literal of literal
@@ -50,6 +55,7 @@ and identifier =
   | Id of string
 
 and formals =
+
     (identifier * typ option) list
 
 and function_identifier =

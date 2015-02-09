@@ -56,6 +56,7 @@ let translate (p : S.t) env =
   and definition' env d =
     definition env (Position.value d)
 
+<<<<<<< HEAD
   and definition env = function
     | S.DefineValue (pat, e) ->
    (* fopix defineValues (x , e ) 
@@ -71,6 +72,22 @@ let translate (p : S.t) env =
   top level pattern *)
     
          failwith "Student! This is your job!"
+=======
+  and definition env =  function    
+  |  S.DefineValue (pat, e) ->   (* begin     end *****)
+  (* fopix defineValues (x , e ) 
+  val x = e 
+  val  a  = fst x 
+  val b = snd x 
+  toplevel_pattern x pat 
+  define( pat , e1 , e2 ) ->
+  val put = e1 in e2 end 
+  case ( e , branch)
+    
+
+  top level pattern *)
+    failwith "Student! This is your job!"
+>>>>>>> 5e76bdbdc52acaa1cc1cde09100bad6c42979e6f
 
     | S.DefineFunction (f, xs, _, e) ->
          failwith "Student! This is your job!"
@@ -124,10 +141,13 @@ let translate (p : S.t) env =
          failwith "Student! This is your job!"
 
   and toplevel_pattern pos env x p =
+<<<<<<< HEAD
     (* Auxiliary function for dealing with DefineValue(p,e0):
        The identifier x should contain at runtime the value of e0.
        We then construct here some code to destructurate this value
        and assign all the variables occuring in pattern p. *)
+=======
+>>>>>>> 5e76bdbdc52acaa1cc1cde09100bad6c42979e6f
     match p with
     | S.PWildcard ->
          failwith "Student! This is your job!"
@@ -143,12 +163,15 @@ let translate (p : S.t) env =
 
 
   and pattern pos env x pat e =
+<<<<<<< HEAD
     (* Auxiliary function for dealing with patterns in Define(pat,e0,e)
        or Case(e0,[(pat,e);...]).
        The identifier x should contain at runtime the value of e0.
        We then construct here some code to destructurate this value
        and assign all the variables occuring in pattern p, before
        launching the computation of e. *)
+=======
+>>>>>>> 5e76bdbdc52acaa1cc1cde09100bad6c42979e6f
     match pat with
       | S.PWildcard ->
            failwith "Student! This is your job!"
@@ -182,6 +205,10 @@ let translate (p : S.t) env =
 
   and choose_data_representation env defs =
        failwith "Student! This is your job!"
+<<<<<<< HEAD
+=======
+
+>>>>>>> 5e76bdbdc52acaa1cc1cde09100bad6c42979e6f
   in
   program env p
 
