@@ -44,8 +44,7 @@ let lookup_function_label f env =
 
 (** [lookup_function_formals f env] returns the formal arguments of
     [f] in [env]. *)
-l
-**et lookup_function_formals f env =
+let lookup_function_formals f env =
   List.assoc f env.function_formals
 
 (** [fresh_function_label f] returns a fresh label starting with [f]

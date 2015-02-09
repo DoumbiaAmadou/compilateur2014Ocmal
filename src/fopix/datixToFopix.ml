@@ -58,6 +58,18 @@ let translate (p : S.t) env =
 
   and definition env = function
     | S.DefineValue (pat, e) ->
+   (* fopix defineValues (x , e ) 
+    val x = e 
+    val  a  = fst x 
+    val b = snd x 
+    toplevel_pattern x pat 
+    define( pat , e1 , e2 ) ->
+    val put = e1 in e2 end 
+    case ( e , branch)
+    
+
+  top level pattern *)
+    
          failwith "Student! This is your job!"
 
     | S.DefineFunction (f, xs, _, e) ->
@@ -170,7 +182,6 @@ let translate (p : S.t) env =
 
   and choose_data_representation env defs =
        failwith "Student! This is your job!"
-
   in
   program env p
 

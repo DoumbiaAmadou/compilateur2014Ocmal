@@ -241,16 +241,17 @@ let evaluate runtime (ast : t) =
       machine instructions. *)
   and execute_instruction i =
     match i with
+    (*recupère la varialbe sur la pile des varialbles et stocke cette variable dans la liste *)
       | Define x ->
         Stack.(push (x, get 0 values) variables);
         Stack.pop values
-
+(* recupération de la variable.*)
       | Undefine ->
         Stack.pop variables
-
+(*convertie la variable de l'entier k passere en parametre pour en fair un DInt et le mettre dans ma pile des variable*) 
       | GetVariable i ->
         Stack.(push (snd (get i variables)) values)
-
+(*convertie la variable de l'entier k passere en parametre pour en fair un DInt et le mettre dans ma pile des valeur*)
       | Remember k ->
         Stack.push (DInt k) values
 
@@ -286,10 +287,25 @@ let evaluate runtime (ast : t) =
 
       | Comment _ ->
         ()
+      | BlockCreate -> (*as_lbl (Stack.get 0 values) in  RememberLabel l  ;  Stack.pop values; 
+         Hashtbl.add blocks l [i]*)
+        begin  match (Stack.get 0 values ) , (Stack.get 1 values) with 
+          |(DInt a )  , b ->  Stack.popN 2 values; Stack.push (DLocation (Memory.allocate memory a b )) values
+          |_-> failwith " type error "
+        end 
 
-      | BlockCreate -> failwith "Student! This is your job!"
-      | BlockSet -> failwith "Student! This is your job!"
-      | BlockGet -> failwith "Student! This is your job!"
+      | BlockSet  -> 
+      begin
+        match (Stack.get 0 values) ,(Stack.get 1 values) ,(Stack.get 2 values) with 
+          |(DLocation l),(DInt i ), x  -> Memory.write (Memory.dereference memory l)  i x ; Stack.popN 3 values  
+          |_ -> failwith "block, int  and x not in the stack "
+      end
+       
+      (* failwith "Student! This is your job!" *)
+      | BlockGet -> begin  match (Stack.get 0 values) ,(Stack.get 1 values)  with 
+          | (DLocation l) ,( DInt  i ) -> Stack.push  ( Memory.read (Memory.dereference memory l) i) values; Stack.popN 2 values   
+          |_ -> failwith "block and  int  not in the stack "
+      end
 
   and jump (Label x as l) =
     let block =
