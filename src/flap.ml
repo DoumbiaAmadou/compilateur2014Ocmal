@@ -28,6 +28,7 @@ and initialize_options () =
   CommandLineOptions.parse ()
 
 and initialize_languages () =
+  HopixInitialization.initialize ();
   DatixInitialization.initialize ();
   FopixInitialization.initialize ();
   JavixInitialization.initialize ();
