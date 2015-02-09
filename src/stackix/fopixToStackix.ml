@@ -28,7 +28,7 @@ type environment = {
   (** [context] is the list of all previously compiled definitions. *)
   context          : Target.AST.t list;
 }
-*
+
 
 (** Initially, the environment is empty. *)
 let initial_environment () = {
@@ -44,8 +44,7 @@ let lookup_function_label f env =
 
 (** [lookup_function_formals f env] returns the formal arguments of
     [f] in [env]. *)
-l
-**et lookup_function_formals f env =
+let lookup_function_formals f env =
   List.assoc f env.function_formals
 
 (** [fresh_function_label f] returns a fresh label starting with [f]
@@ -144,9 +143,10 @@ and declaration env = function
   )
 
   | Source.AST.DefineFunction (f, xs, e) ->
+  
     failwith "Student! This is your job!"
 
-(** [expression pos env e] compiles [e] into a block of Stackix
+  (** [expression pos env e] compiles [e] into a block of Stackix
     instructions that *does not* start with a label. *)
 and expression pos env = function
   | Source.AST.Literal l ->
@@ -163,10 +163,8 @@ and expression pos env = function
     @ expression' (bind_variable env i) e2
     @ single_instruction Target.AST.Undefine
 
-  | Source.AST.IfThenElse (c, t, f) -> 
-	expression' (bind_variable env i) e2 
-	
-    failwith "Student! This is your job!"
+  | Source.AST.IfThenElse (c, t, f) -> (*	expression' (bind_variable env i) e2 *)
+    failwith "Student! This is your job!" 
 
   | Source.AST.FunCall (Source.AST.FunId f, [e1; e2])
       when is_binop f
@@ -174,6 +172,10 @@ and expression pos env = function
       expression' env e2
     @ expression' env e1
     @ (single_instruction (Target.AST.Binop (binop f)))
+
+  | Source.AST.FunCall (Source.AST.FunId "block_create", [e1; e2]) ->
+     
+
 
   | Source.AST.FunCall (f, actuals) ->
     failwith "Student! This is your job!"
