@@ -49,12 +49,14 @@ rule token = parse
   | "eval"          { EVAL }
   | "case"          { CASE }
   | "with"          { WITH }
+  | "mutate"        { MUTATE }
 
   (** Literals *)
   | digit+ as d     { INT (int_of_string d) }
 
   (** Symbols *)
   | "_"             { UNDERSCORE }
+  | "?"             { QMARK     }
 
   (** Identifiers *)
   | identifier as i  { ID i  }
@@ -73,6 +75,7 @@ rule token = parse
   | "<"             { LT         }
   | "<="            { LTE        }
   | "->"            { RIGHTARROW }
+  | "&"             { UPPERSAND  }
 
   (** Punctuation *)
   | ","             { COMMA     }

@@ -28,6 +28,10 @@ and expression =
   | TaggedValues of tag * expression located list
   | Case of expression located * branch list
 
+  (* Only appears in the image of closure conversion. *)
+  | MutateTuple of expression located * int * expression located
+  | UnknownFunCall of expression located * expression located list
+
 and tag =
   | Constructor of string
 
@@ -42,6 +46,7 @@ and pattern =
 
 and literal =
   | LInt of int
+  | LFun of function_identifier
 
 and typed_identifier =
     identifier * typ option

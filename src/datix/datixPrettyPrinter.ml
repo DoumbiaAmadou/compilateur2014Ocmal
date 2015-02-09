@@ -142,6 +142,14 @@ and expression = function
     )
     ++ string "end"
 
+  | MutateTuple (e, i, v) ->
+    string "mutate"
+    ++ PPrintOCaml.tuple (int i :: List.map expression' [e; v])
+
+  | UnknownFunCall (e, es) ->
+    string "?" ++ parens (expression' e)
+    ++ PPrintOCaml.tuple (List.map expression' es)
+
 and field (l, e) =
   group (label l ++ string "=" ++ expression' e)
 
@@ -160,6 +168,7 @@ and funcall f es =
 
 and literal = function
   | LInt x -> string (string_of_int x)
+  | LFun (FunId f) -> string ("&" ^ f)
 
 let to_string f x =
   let b = Buffer.create 13 in
