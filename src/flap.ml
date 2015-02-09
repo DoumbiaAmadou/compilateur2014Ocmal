@@ -30,6 +30,7 @@ and initialize_options () =
 and initialize_languages () =
   DatixInitialization.initialize ();
   FopixInitialization.initialize ();
+  JavixInitialization.initialize ();
   StackixInitialization.initialize ()
 
 let get_compiler () =
@@ -157,6 +158,7 @@ let batch_compilation () =
   let open Compiler in
   let input_filename = Options.get_input_filename () in
   let module_name = Filename.chop_extension input_filename in
+  let () = Options.compilation_unit_name := module_name in
   let ast = Source.parse_filename input_filename in
   if Options.get_unsafe () then
     ()
