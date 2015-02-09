@@ -293,6 +293,7 @@ let evaluate runtime (ast : t) =
         begin  match (Stack.get 0 values ) , (Stack.get 1 values) with 
           |(DInt a )  , b ->  Stack.popN 2 values; Stack.push (DLocation (Memory.allocate memory a b )) values
           |_-> failwith " type error "
+        end 
 
  (*  failwith "Student! This is your job!" *)
 
@@ -301,7 +302,6 @@ let evaluate runtime (ast : t) =
         begin  match (Stack.get 0 values ) , (Stack.get 1 values) with 
          |(DInt a )  , b ->  Stack.popN 2 values; Stack.push (DLocation (Memory.allocate memory a b )) values
          |_-> failwith " type error "
-
         end 
 
       | BlockSet  -> 
@@ -312,19 +312,14 @@ let evaluate runtime (ast : t) =
       end
        
       (* failwith "Student! This is your job!" *)
-      | BlockGet -> begin  match (Stack.get 0 values) ,(Stack.get 1 values)  with 
-          | (DLocation l) ,( DInt  i ) -> Stack.push  ( Memory.read (Memory.dereference memory l) i) values; Stack.popN 2 values   
-          |_ -> failwith "block and  int  not in the stack "
+      | BlockGet -> 
+        begin  
+          match (Stack.get 0 values) ,(Stack.get 1 values)  with 
+            | (DLocation l) ,( DInt  i ) -> Stack.push  ( Memory.read (Memory.dereference memory l) i) values; Stack.popN 2 values   
+            |_ -> failwith "block and  int  not in the stack "
+        end
 
-      end
-
-  and jump (Label x as l) =
-
-          end
-
-      (*  failwith "Student! This is your job!" *)
-      and jump (Label x as l) =
-      
+  and  jump (Label x as l) =
    let block =
       try
         Hashtbl.find blocks l

@@ -95,11 +95,12 @@ let single_instruction i =
 
 (** [translate p env] turns a Fopix program [p] into a Javix program
     using [env] to retrieve contextual information. *)
+
 let rec translate p env : T.t * environment =
   (basic_program (single_instruction (T.Bipush 33) @ single_instruction (T.Ireturn) )),env 
-
+(*
   failwith "Student! This is your job!"
-
+*)
 (** Remarks:
   - When using this compiler from fopix to javix, flap will
     produce some .j files.
