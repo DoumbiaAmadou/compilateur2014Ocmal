@@ -64,3 +64,5 @@ let unsafe = ref false
 let set_unsafe = ( := ) unsafe
 
 let get_unsafe () = !unsafe
+
+let compilation_unit_name = ref "Flap"
