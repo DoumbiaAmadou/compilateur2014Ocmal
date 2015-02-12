@@ -6,8 +6,8 @@ open HopixAST
 let error = Error.error "during type checking"
 
 (** Basic types. *)
-let tyint  = TyIdentifier (TId "int")
-let tybool = TyIdentifier (TId "bool")
+let tyint  = TyBase (TId "int", [])
+let tybool = TyBase (TId "bool", [])
 
 (** During typechecking, we thread an environment that contains
     the type of variables and the type definitions. *)
@@ -182,7 +182,7 @@ let typecheck tenv ast =
       | DefineValue (p, e) ->
         define_value tenv p e
 
-      | DefineType (t, tdef) ->
+      | DefineType (t, _, tdef) ->
         let tenv' = TypingEnvironment.bind_type_definition tenv t (TaggedUnionTy []) in
         well_formed_type_definition (Position.position def) tenv' tdef;
         TypingEnvironment.bind_type_definition tenv t tdef
@@ -283,7 +283,7 @@ let typecheck tenv ast =
       | PWildcard, _ ->
            failwith "Student! This is your job!"
 
-      | PTaggedValues (k, xs), TyIdentifier t ->
+      | PTaggedValues (k, xs), TyBase (t,_) ->
            failwith "Student! This is your job!"
 
       | _, _ ->

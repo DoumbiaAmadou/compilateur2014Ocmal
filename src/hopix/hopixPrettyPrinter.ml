@@ -20,7 +20,7 @@ and definition = function
       ++ group (located expression e)
     )
 
-  | DefineType (tid, tdef) ->
+  | DefineType (tid, _, tdef) ->
     nest 2 (
       group (string "type" ++ type_identifier tid ++ string "=")
       ++ group (type_definition tdef)
@@ -49,6 +49,8 @@ and type_definition = function
   | TaggedUnionTy ks ->
     separate_map (string "| ") tag_declaration ks
 
+  | DefTy ty -> typ ty
+
 and tag_declaration (t, tys) =
   tag t ++ PPrintOCaml.tuple (List.map typ tys)
 
@@ -65,8 +67,8 @@ and binding (x, ty) =
   identifier x ++ string ":" ++ typ ty
 
 and typ = function
-  | TyIdentifier x ->
-    type_identifier x
+  | TyBase (x,l) ->
+    type_identifier x (* TODO : print l *)
   | TyTuple ts ->
     parens (separate_map (string " * ") typ ts)
   | TyArrow (ity, oty) ->

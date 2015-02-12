@@ -145,7 +145,7 @@ let closure_conversion : HopixAST.t -> HopixAST.t = HopixAST.(
   | DefineValue (p, e) ->
        failwith "Student! This is your job!"
 
-  | DefineType (tid, tdef) ->
+  | DefineType (tid, _, tdef) ->
        failwith "Student! This is your job!"
 
   and expression e =
@@ -266,7 +266,7 @@ let hoist : HopixAST.t -> DatixAST.t =
       | S.DefineValue (p, e) ->
            failwith "Student! This is your job!"
 
-      | S.DefineType (tid, tdef) ->
+      | S.DefineType (tid, _, tdef) ->
            failwith "Student! This is your job!"
 
     and expression e =

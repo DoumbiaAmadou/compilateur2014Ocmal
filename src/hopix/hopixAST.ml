@@ -9,7 +9,7 @@ and definition =
       pattern located * expression located
 
   | DefineType of
-      type_identifier * type_definition
+      type_identifier * type_params * type_definition
 
 and expression =
   | Literal of literal
@@ -50,17 +50,17 @@ and literal =
 and identifier =
   | Id of string
 
-and formals =
-    typed_identifier list
-
 and typ =
-  | TyIdentifier of type_identifier
+  | TyBase       of type_identifier * typ list
   | TyTuple      of typ list
   | TyArrow      of typ * typ
 
 and type_definition =
   | RecordTy      of (label * typ) list
   | TaggedUnionTy of (tag * typ list) list
+  | DefTy of typ
+
+and type_params = type_identifier list
 
 and label =
   | Label of string

@@ -83,7 +83,7 @@ definition: VAL x=located(pattern) EQUAL e=located(expression)
 }
 | TYPE t=type_identifier EQUAL td=type_definition
 {
-  DefineType (t, td)
+  DefineType (t, [], td)
 }
 
 frec:
@@ -328,7 +328,7 @@ tag: k=UID
 typ:
   x=type_identifier
 {
-  TyIdentifier x
+  TyBase (x,[])
 }
 | LPAREN ts=separated_nonempty_list(STAR, typ) RPAREN {
   match ts with
