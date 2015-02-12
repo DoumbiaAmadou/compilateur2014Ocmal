@@ -4,10 +4,10 @@
 
 %}
 
-%token VAL DEF IN END IF THEN ELSE EVAL WITH CASE TYPE
-%token PLUS MINUS STAR SLASH GT GTE LT LTE EQUAL
+%token VAL DEF IN END IF THEN ELSE EVAL WITH CASE TYPE MUTATE
+%token PLUS MINUS STAR SLASH GT GTE LT LTE EQUAL UPPERSAND
 %token UNDERSCORE RIGHTARROW PIPE DOT
-%token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET
+%token LPAREN RPAREN LBRACE RBRACE LBRACKET RBRACKET QMARK
 %token COMMA SEMICOLON COLON EOF
 %token<int> INT
 %token<string> ID UID
@@ -112,6 +112,15 @@ expression:
   LPAREN es=separated_list(COMMA, located(expression)) RPAREN
 {
   FunCall (f, es)
+}
+| MUTATE LPAREN i=INT COMMA e1=located(expression) COMMA e2=located(expression) RPAREN
+{
+  MutateTuple (e1, i, e2)
+}
+| QMARK LPAREN e=located(expression) RPAREN
+  LPAREN es=separated_list(COMMA, located(expression)) RPAREN
+{
+  UnknownFunCall (e, es)
 }
 | l=located(expression) b=binop r=located(expression) {
   FunCall (FunId b, [l; r])
@@ -226,6 +235,9 @@ type_identifier: x=ID
   x=INT
 {
   LInt x
+}
+| UPPERSAND x=ID {
+  LFun (FunId x)
 }
 
 %inline identifier: x=ID {

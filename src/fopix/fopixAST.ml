@@ -14,9 +14,12 @@ and expression =
   | Define of identifier located * expression located * expression located
   | FunCall of function_identifier * expression located list
   | IfThenElse of expression located * expression located * expression located
+  | UnknownFunCall of expression located * expression located list
+
 
 and literal =
   | LInt of int
+  | LFun of function_identifier
 
 and identifier =
   | Id of string

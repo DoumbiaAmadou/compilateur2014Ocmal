@@ -62,6 +62,7 @@ rule token = parse
   | "<"             { LT      }
   | "<="            { LTE     }
   | ":="            { ASSIGNS }
+  | "&"             { UPPERSAND }
 
   (** Punctuation *)
   | ","             { COMMA     }

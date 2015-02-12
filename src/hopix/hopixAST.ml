@@ -1,4 +1,4 @@
-(** The abstract syntax tree for datix programs. *)
+(** The abstract syntax tree for hopix programs. *)
 
 open Position
 
@@ -8,34 +8,29 @@ and definition =
   | DefineValue of
       pattern located * expression located
 
-  (* FUNC : identifier{ position  , value } , formal , type option , expression Located *)
-
-  | DefineFunction of
-      function_identifier located
-    * formals * typ option
-    * expression located
-
-
-(*TYPE : identidier , definition *)
   | DefineType of
-      type_identifier * type_definition
-      
+      type_identifier * type_params * type_definition
 
 and expression =
   | Literal of literal
   | Variable of identifier
   | Define of pattern located * expression located * expression located
-  | FunCall of function_identifier * expression located list
-  | IfThenElse of expression located * expression located * expression located
+  | Apply of expression located * expression located
+  | Fun of lambda
+  | RecFuns of (typed_identifier located * expression located) list
   | Tuple of expression located list
   | Record of (label * expression located) list
   | RecordField of expression located * label
   | TaggedValues of tag * expression located list
+  | IfThenElse of expression located * expression located * expression located
   | Case of expression located * branch list
 
   (* Only appears in the image of closure conversion. *)
   | MutateTuple of expression located * int * expression located
-  | UnknownFunCall of expression located * expression located list
+
+and lambda = typed_identifier * expression located
+
+and typed_identifier = identifier * typ option
 
 and tag =
   | Constructor of string
@@ -51,28 +46,21 @@ and pattern =
 
 and literal =
   | LInt of int
-  | LFun of function_identifier
-
-and typed_identifier =
-    identifier * typ option
 
 and identifier =
   | Id of string
 
-and formals =
-
-    (identifier * typ option) list
-
-and function_identifier =
-  | FunId of string
-
 and typ =
-  | TyIdentifier of type_identifier
+  | TyBase       of type_identifier * typ list
   | TyTuple      of typ list
+  | TyArrow      of typ * typ
 
 and type_definition =
   | RecordTy      of (label * typ) list
   | TaggedUnionTy of (tag * typ list) list
+  | DefTy of typ
+
+and type_params = type_identifier list
 
 and label =
   | Label of string

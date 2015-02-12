@@ -2,13 +2,11 @@ open PPrint
 open PPrintCombinators
 open PPrintEngine
 
-open DatixAST
+open HopixAST
 
-let int x =
-  string (string_of_int x)
+let int i = string (string_of_int i)
 
-let ( ++ ) x y =
-  x ^^ break 1 ^^ y
+let ( ++ ) x y = x ^^ break 1 ^^ y
 
 let located f x = f (Position.value x)
 
@@ -22,16 +20,7 @@ and definition = function
       ++ group (located expression e)
     )
 
-  | DefineFunction (f, xs, ty, e) ->
-    nest 2 (
-      group (string "def" ++ located function_identifier f
-             ++ PPrintOCaml.tuple (List.map binding xs)
-             ++ type_annotation ty
-             ++ string "=")
-      ++ group (located expression e)
-    )
-
-  | DefineType (tid, tdef) ->
+  | DefineType (tid, _, tdef) ->
     nest 2 (
       group (string "type" ++ type_identifier tid ++ string "=")
       ++ group (type_definition tdef)
@@ -60,6 +49,8 @@ and type_definition = function
   | TaggedUnionTy ks ->
     separate_map (string "| ") tag_declaration ks
 
+  | DefTy ty -> typ ty
+
 and tag_declaration (t, tys) =
   tag t ++ PPrintOCaml.tuple (List.map typ tys)
 
@@ -69,27 +60,35 @@ and fieldty (l, ty) =
 and label (Label x) =
   string x
 
-and type_annotation = function
-  | None -> empty
-  | Some ty -> string ":" ++ typ ty
+and type_annotation ty =
+  string ":" ++ typ ty
 
 and binding (x, ty) =
-  identifier x ++ type_annotation ty
-
+  identifier x ++ string ":" ++ typ ty
 
 and typ = function
-  | TyIdentifier x ->
-    type_identifier x
+  | TyBase (x,l) ->
+    type_identifier x (* TODO : print l *)
   | TyTuple ts ->
     parens (separate_map (string " * ") typ ts)
+  | TyArrow (ity, oty) ->
+    parens_at_left_arrow ity (typ ity) ++ string "->" ++ typ oty
+
+and parens_at_left_arrow = function
+  | TyTuple _ | TyArrow _ -> parens
+  | _ -> fun x -> x
 
 and identifier (Id x) =
   string x
 
 and typed_identifier (x, ty) =
-  identifier x ++ type_annotation ty
+  match ty with
+    | Some ty ->
+      parens (identifier x ++ type_annotation ty)
+    | None ->
+      identifier x
 
-and function_identifier (FunId x) =
+and function_identifier (Id x) =
   string x
 
 and expression = function
@@ -102,12 +101,13 @@ and expression = function
       ++ separate_map (string "; ") field fs
       ++ string "}"
     )
+
   | Literal l ->
     literal l
+
   | Variable x ->
     identifier x
-  | FunCall (FunId f, es) ->
-    funcall f es
+
   | IfThenElse (c, t, f) ->
     nest 2 (
       group (string "if"
@@ -119,6 +119,7 @@ and expression = function
       ++ group (located expression f)
     )
     ++ string "end"
+
   | Define (x, e1, e2) ->
     nest 2 (
       group (string "val"
@@ -130,12 +131,13 @@ and expression = function
     ++ string "in"
     ++ group (located expression e2)
     ++ string "end"
+
   | Tuple es ->
-    string "[" ++
-    separate_map (string "," ++ break 0) expression' es
-    ++ string "]"
+    PPrintOCaml.tuple (List.map expression' es)
+
   | TaggedValues (t, es) ->
     tag t ++ PPrintOCaml.tuple (List.map expression' es)
+
   | Case (e, bs) ->
     nest 2 (
       group (string "case" ++ expression' e ++ string "with")
@@ -143,13 +145,34 @@ and expression = function
     )
     ++ string "end"
 
-  | MutateTuple (e, i, v) ->
-    string "mutate"
-    ++ PPrintOCaml.tuple (int i :: List.map expression' [e; v])
+  | Apply (a, b) ->
+    parens_at_left_of_application a (expression' a)
+    ++ parens_at_right_of_application b (expression' b)
 
-  | UnknownFunCall (e, es) ->
-    string "?" ++ parens (expression' e)
-    ++ PPrintOCaml.tuple (List.map expression' es)
+  | Fun (x, e) ->
+    nest 2 (group (
+      group (string "{" ++ typed_identifier x ++ string "->")
+      ++ expression' e ++ string "}")
+    )
+
+  | RecFuns fs ->
+    string "fix"
+    ++ separate_map (break 1 ++ string "and" ^^ break 1) recfun fs
+    ++ string "end"
+
+
+and recfun (fty, e) =
+  group (typed_identifier (Position.value fty) ++ string "=" ++ expression' e)
+
+and parens_at_left_of_application e =
+  match Position.value e with
+  | Apply _ | Variable _ | Literal _ -> fun x -> x
+  | _ -> parens
+
+and parens_at_right_of_application e =
+  match Position.value e with
+  | Variable _ | Literal _ -> fun x -> x
+  | _ -> parens
 
 and field (l, e) =
   group (label l ++ string "=" ++ expression' e)
@@ -157,11 +180,11 @@ and field (l, e) =
 and branch (Branch (p, e)) =
   group (string "|" ++ pattern' p ++ string "->" ++ nest 2 (expression' e))
 
-and expression' e = expression (Position.value e)
+and expression' e = group (expression (Position.value e))
 
 and funcall f es =
   match f, es with
-    | ("*" | "/" | "+" | "-" | "%" | "=" | "<" | ">" | ">=" | "<="), [ lhs; rhs ] ->
+    | ("*" | "/" | "+" | "-" | "%"), [ lhs; rhs ] ->
       group (parens (expression' lhs ++ string f ++ expression' rhs))
     | _, _ ->
       let ts = PPrintOCaml.tuple (List.map expression' es) in
@@ -169,7 +192,6 @@ and funcall f es =
 
 and literal = function
   | LInt x -> string (string_of_int x)
-  | LFun (FunId f) -> string ("&" ^ f)
 
 let to_string f x =
   let b = Buffer.create 13 in
