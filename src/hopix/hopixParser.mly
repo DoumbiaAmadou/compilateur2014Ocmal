@@ -34,7 +34,7 @@
 %token REC AND VAL DEF IN END IF THEN ELSE EVAL WITH CASE TYPE
 %token PLUS MINUS STAR SLASH GT GTE LT LTE EQUAL FIX
 %token UNDERSCORE DRIGHTARROW RIGHTARROW PIPE DOT
-%token LPAREN RPAREN LBRACE RBRACE
+%token LPAREN RPAREN LBRACE RBRACE COLONEQUAL
 %token COMMA SEMICOLON COLON EOF
 %token<int> INT
 %token<string> ID UID
@@ -81,10 +81,15 @@ definition: VAL x=located(pattern) EQUAL e=located(expression)
 {
   DefineValue (Position.map (fun _ -> PVariable (Id "res")) e, e)
 }
-| TYPE t=type_identifier EQUAL td=type_definition
+| TYPE t=type_identifier l=type_params EQUAL td=type_definition
 {
-  DefineType (t, [], td)
+  DefineType (t, l, td)
 }
+| TYPE t=type_identifier l=type_params COLONEQUAL ty = typ
+{
+  DefineType (t, l, DefTy ty)
+}
+
 
 frec:
   f=located(function_identifier)
@@ -143,6 +148,24 @@ binding: LPAREN x=identifier COLON ty=typ RPAREN
 | x=identifier
 {
   (x, None)
+}
+
+%inline type_params: /* empty */
+{
+ []
+}
+| LPAREN l = separated_nonempty_list(COMMA, type_identifier) RPAREN
+{
+  l
+}
+
+%inline type_args: /* empty */
+{
+ []
+}
+| LPAREN l = separated_nonempty_list(COMMA, typ) RPAREN
+{
+  l
 }
 
 expression:
@@ -326,9 +349,9 @@ tag: k=UID
 }
 
 typ:
-  x=type_identifier
+  x=type_identifier l=type_args
 {
-  TyBase (x,[])
+  TyBase (x,l)
 }
 | LPAREN ts=separated_nonempty_list(STAR, typ) RPAREN {
   match ts with
