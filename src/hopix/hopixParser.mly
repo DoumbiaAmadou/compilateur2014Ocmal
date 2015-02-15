@@ -15,17 +15,23 @@
 
   let lambda xs e =
     let locate x = Position.map (fun _ -> x) e in
-    locate (List.fold_left (fun e x -> Fun (x, locate e)) (Position.value e) (List.rev xs))
+    locate
+      (List.fold_left (fun e x -> Fun (x, locate e))
+         (Position.value e)
+         (List.rev xs))
+
+  let make_arrow_opt o1 o2 = match o1, o2 with
+    | Some t1, Some t2 -> Some (TyArrow (t1,t2))
+    | _ -> None
 
   let arrow_type ins out =
-    List.fold_left (fun ty ity -> TyArrow (ity, ty)) out (List.rev ins)
+    List.fold_left make_arrow_opt out (List.rev ins)
 
   let recfuns fs =
     let recfun (f, xs, out_ty, e) =
       let ins = List.map snd xs in
       let fty = arrow_type ins out_ty in
-      let xs = List.map (fun (x, ty) -> (x, Some ty)) xs in
-      (Position.map (fun f -> (f, Some fty)) f, lambda xs e)
+      (Position.map (fun f -> (f, fty)) f, lambda xs e)
     in
     RecFuns (List.map recfun fs)
 
@@ -93,17 +99,17 @@ definition: VAL x=located(pattern) EQUAL e=located(expression)
 
 frec:
   f=located(function_identifier)
-  xs=tformals
+  xs=tbinding*
   COLON out_ty=typ
   EQUAL e=located(expression)
 {
-  (f, xs, out_ty, e)
+  (f, xs, Some out_ty, e)
 }
 | f=located(function_identifier)
-  COLON out_ty=typ
+  xs=identifier*
   EQUAL e=located(expression)
 {
-  (f, [], out_ty, e)
+  (f, List.map (fun id -> (id,None)) xs, None, e)
 }
 
 type_definition:
@@ -132,13 +138,9 @@ fielddef:
   xs
 }
 
-%inline tformals: xs=tbinding+ {
-  xs
-}
-
 tbinding: LPAREN x=identifier COLON ty=typ RPAREN
 {
-  (x, ty)
+  (x, Some ty)
 }
 
 binding: LPAREN x=identifier COLON ty=typ RPAREN
