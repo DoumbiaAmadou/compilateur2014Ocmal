@@ -10,6 +10,10 @@ let ( ++ ) x y = x ^^ break 1 ^^ y
 
 let located f x = f (Position.value x)
 
+let tytuple f = function
+  | [] -> string ""
+  | l -> string "(" ++ separate_map (string ",") f l ++ string ")"
+
 let rec program p =
   separate_map hardline definition' p
 
@@ -20,10 +24,16 @@ and definition = function
       ++ group (located expression e)
     )
 
-  | DefineType (tid, _, tdef) ->
+  | DefineType (tid, tparams, tdef) ->
+    let symb, rest = match tdef with
+      | DefTy ty -> ":=", typ ty
+      | _ -> "=", type_definition tdef
+    in
     nest 2 (
-      group (string "type" ++ type_identifier tid ++ string "=")
-      ++ group (type_definition tdef)
+      group (string "type" ++ type_identifier tid ++
+             tytuple type_identifier tparams ++
+             string symb)
+      ++ group rest
     )
 
 and definition' d = definition (Position.value d)
@@ -49,7 +59,7 @@ and type_definition = function
   | TaggedUnionTy ks ->
     separate_map (string "| ") tag_declaration ks
 
-  | DefTy ty -> typ ty
+  | DefTy ty -> assert false
 
 and tag_declaration (t, tys) =
   tag t ++ PPrintOCaml.tuple (List.map typ tys)
@@ -68,7 +78,7 @@ and binding (x, ty) =
 
 and typ = function
   | TyBase (x,l) ->
-    type_identifier x (* TODO : print l *)
+    type_identifier x ++ tytuple typ l
   | TyTuple ts ->
     parens (separate_map (string " * ") typ ts)
   | TyArrow (ity, oty) ->

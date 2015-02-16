@@ -15,17 +15,23 @@
 
   let lambda xs e =
     let locate x = Position.map (fun _ -> x) e in
-    locate (List.fold_left (fun e x -> Fun (x, locate e)) (Position.value e) (List.rev xs))
+    locate
+      (List.fold_left (fun e x -> Fun (x, locate e))
+         (Position.value e)
+         (List.rev xs))
+
+  let make_arrow_opt o1 o2 = match o1, o2 with
+    | Some t1, Some t2 -> Some (TyArrow (t1,t2))
+    | _ -> None
 
   let arrow_type ins out =
-    List.fold_left (fun ty ity -> TyArrow (ity, ty)) out (List.rev ins)
+    List.fold_left make_arrow_opt out (List.rev ins)
 
   let recfuns fs =
     let recfun (f, xs, out_ty, e) =
       let ins = List.map snd xs in
       let fty = arrow_type ins out_ty in
-      let xs = List.map (fun (x, ty) -> (x, Some ty)) xs in
-      (Position.map (fun f -> (f, Some fty)) f, lambda xs e)
+      (Position.map (fun f -> (f, fty)) f, lambda xs e)
     in
     RecFuns (List.map recfun fs)
 
@@ -34,7 +40,7 @@
 %token REC AND VAL DEF IN END IF THEN ELSE EVAL WITH CASE TYPE
 %token PLUS MINUS STAR SLASH GT GTE LT LTE EQUAL FIX
 %token UNDERSCORE DRIGHTARROW RIGHTARROW PIPE DOT
-%token LPAREN RPAREN LBRACE RBRACE
+%token LPAREN RPAREN LBRACE RBRACE COLONEQUAL
 %token COMMA SEMICOLON COLON EOF
 %token<int> INT
 %token<string> ID UID
@@ -81,24 +87,29 @@ definition: VAL x=located(pattern) EQUAL e=located(expression)
 {
   DefineValue (Position.map (fun _ -> PVariable (Id "res")) e, e)
 }
-| TYPE t=type_identifier EQUAL td=type_definition
+| TYPE t=type_identifier l=type_params EQUAL td=type_definition
 {
-  DefineType (t, [], td)
+  DefineType (t, l, td)
 }
+| TYPE t=type_identifier l=type_params COLONEQUAL ty = typ
+{
+  DefineType (t, l, DefTy ty)
+}
+
 
 frec:
   f=located(function_identifier)
-  xs=tformals
+  xs=tbinding*
   COLON out_ty=typ
   EQUAL e=located(expression)
 {
-  (f, xs, out_ty, e)
+  (f, xs, Some out_ty, e)
 }
 | f=located(function_identifier)
-  COLON out_ty=typ
+  xs=identifier*
   EQUAL e=located(expression)
 {
-  (f, [], out_ty, e)
+  (f, List.map (fun id -> (id,None)) xs, None, e)
 }
 
 type_definition:
@@ -127,13 +138,9 @@ fielddef:
   xs
 }
 
-%inline tformals: xs=tbinding+ {
-  xs
-}
-
 tbinding: LPAREN x=identifier COLON ty=typ RPAREN
 {
-  (x, ty)
+  (x, Some ty)
 }
 
 binding: LPAREN x=identifier COLON ty=typ RPAREN
@@ -143,6 +150,24 @@ binding: LPAREN x=identifier COLON ty=typ RPAREN
 | x=identifier
 {
   (x, None)
+}
+
+%inline type_params: /* empty */
+{
+ []
+}
+| LPAREN l = separated_nonempty_list(COMMA, type_identifier) RPAREN
+{
+  l
+}
+
+%inline type_args: /* empty */
+{
+ []
+}
+| LPAREN l = separated_nonempty_list(COMMA, typ) RPAREN
+{
+  l
 }
 
 expression:
@@ -326,9 +351,9 @@ tag: k=UID
 }
 
 typ:
-  x=type_identifier
+  x=type_identifier l=type_args
 {
-  TyBase (x,[])
+  TyBase (x,l)
 }
 | LPAREN ts=separated_nonempty_list(STAR, typ) RPAREN {
   match ts with

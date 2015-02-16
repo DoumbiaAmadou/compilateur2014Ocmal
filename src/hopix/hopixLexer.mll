@@ -70,6 +70,7 @@ rule token = parse
   | "<="            { LTE         }
   | "->"            { RIGHTARROW  }
   | "=>"            { DRIGHTARROW }
+  | ":="            { COLONEQUAL  }
 
   (** Symbols *)
   | "_"             { UNDERSCORE }
