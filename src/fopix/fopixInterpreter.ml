@@ -162,13 +162,29 @@ and expression position runtime = function
     expression' runtime e
 
   | FunCall (FunId "block_create", [size; init]) ->
-    failwith "Student! This is your job!"
+    let vs = expression' runtime size in
+    begin
+      match vs with
+      | VInt size_int -> VLocation (Memory.allocate memory size_int (expression' runtime init))
+      | _ -> assert false
+    end
+(**    failwith "Student! This is your job!" **)
 
   | FunCall (FunId "block_get", [location; index]) ->
-    failwith "Student! This is your job!"
+  begin
+  match expression' runtime location, expression' runtime index with
+    | VLocation p, VInt i -> Memory.read (Memory.dereference memory p) i
+    | _ -> assert false
+    (**    failwith "Student! This is your job!" **)
+  end
 
   | FunCall (FunId "block_set", [location; index; e]) ->
-    failwith "Student! This is your job!"
+  begin
+    match expression' runtime location, expression' runtime index with
+      | VLocation p, VInt i -> Memory.write (Memory.dereference memory p) i (expression' runtime e); VUnit
+      | _ -> assert false
+    (**    failwith "Student! This is your job!" **)
+  end
 
   | FunCall (FunId s, [e1; e2]) when is_binary_primitive s ->
     binop runtime s e1 e2
