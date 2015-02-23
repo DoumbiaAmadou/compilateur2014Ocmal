@@ -162,16 +162,29 @@ and expression' runtime e =
 
 and expression position runtime = function
   | RecordField (e, l) ->
-    failwith "Student! This is your job!"
+     begin
+       match (expression' runtime e) with 
+       |VRecord(lv_list) -> List.assoc l lv_list
+       |_ -> failwith "this expression is not a VRecord"
+     end
 
-  | Tuple es ->
-    failwith "Student! This is your job!"
+  | Tuple es -> 
+     begin
+       match es with
+       |[]-> tuple_as_value []
+       |h::tail -> tuple_as_value (List.map (expression' runtime) (List.map value es))
+     end
 
   | Record rs ->
-    failwith "Student! This is your job!"
+     begin
+       match rs with
+       |[] -> record_as_value []
+       |(l,e)::tail -> let (label_list,expr_list) = List.split rs in
+		       let value_list = (List.map (expression' runtime) (value expr_list)) in
+		       record_as_value (List.combine label_list value_list)
+     end
 
-  | TaggedValues (k, es) ->
-    failwith "Student! This is your job!"
+  | TaggedValues (k, es) -> tagged_as_value k (List.map (expression' runtime) (List.map value es))
 
   | Case (e, bs) ->
     branches runtime (expression' runtime e) bs
@@ -190,7 +203,12 @@ and expression position runtime = function
     binop runtime s e1 e2
 
   | IfThenElse (c, t, f) ->
-    failwith "Student! This is your job!"
+     begin
+       match value_as_bool (expression' runtime c) with
+       |Some true -> expression' runtime t
+       |Some false-> expression' runtime f
+       |_ -> assert false
+     end
 
 and binop runtime s e1 e2 =
   let v1 = expression' runtime e1 in
@@ -200,29 +218,60 @@ and binop runtime s e1 e2 =
   | None -> error [position e1; position e2] "Invalid binary operation."
 
 and branches runtime v = function
-  | [] ->
-    failwith "Student! This is your job!"
+  | [] -> failwith "error! branches are not exhaustive"
 
-  | Branch (pat, e) :: bs ->
-    failwith "Student! This is your job!"
+  | Branch (pat, e) :: bs -> 
+     begin
+       match pat, v with
+       |PWildcard,_ -> expression' runtime e
+       |PVariable(id),_ -> expression' (bind_pattern runtime pat v) e
+       |PTuple(id_list),VTuple(val_list) -> 
+	 if ((List.length id_list) = (List.length val_list)) then 
+	   expression' (bind_pattern runtime pat v) e
+	 else
+	   failwith "error: this tuple doesn't match this kind of pattern"
+       
+       |PTaggedValues(tag,id_list), VTagged (tag',val_list) when tag = tag' -> 
+	 if ((List.length id_list) = (List.length val_list)) then 
+	   expression' (bind_pattern runtime pat v) e
+	 else
+	   failwith "error: this tag is not associated with this kind of pattern"
+
+       |_ -> branches runtime v bs
+     end
 
 and bind_variable runtime x v =
   { environment = Environment.bind runtime.environment x v }
 
 and bind_pattern runtime pat v : runtime =
   match Position.value pat, v with
-    | PWildcard, _ ->
-      failwith "Student! This is your job!"
+    | PWildcard, _ -> runtime
 
-    | PVariable x, _ ->
-      failwith "Student! This is your job!"
+    | PVariable x, _ -> bind_variable runtime x v
 
     | PTuple xs, VTuple vs ->
-      failwith "Student! This is your job!"
-
-    | PTaggedValues (k, xs), VTagged (k', vs) ->
-      failwith "Student! This is your job!"
-
+       if ((List.length xs) = (List.length vs)) then 
+	 let new_runtime = runtime in
+	 (List.map2 
+	    (fun id v -> new_runtime = (bind_variable new_runtime id v))
+	    xs
+	    vs
+	 );
+	 new_runtime
+       else
+	 failwith "error! cannot match Tuple pattern (not the same length)"
+    
+    | PTaggedValues (k, xs), VTagged (k', vs) when k = k' ->
+       if ((List.length xs) = (List.length vs)) then        
+	 let new_runtime = runtime in
+	 (List.map2 
+	    (fun id v -> new_runtime = (bind_variable new_runtime id v))
+	    xs
+	    vs
+	 );
+	 new_runtime
+       else
+	 failwith "error! cannot match TaggedValue pattern (not the same length)"
     | _, _ ->
       assert false (* By typing. *)
 
