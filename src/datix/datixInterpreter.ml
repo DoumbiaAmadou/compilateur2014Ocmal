@@ -172,7 +172,7 @@ and expression position runtime = function
      begin
        match es with
        |[]-> tuple_as_value []
-       |h::tail -> tuple_as_value (List.map (expression' runtime) (List.map value es))
+       |h::tail -> tuple_as_value (List.map (expression' runtime) es)
      end
 
   | Record rs ->
@@ -180,11 +180,11 @@ and expression position runtime = function
        match rs with
        |[] -> record_as_value []
        |(l,e)::tail -> let (label_list,expr_list) = List.split rs in
-		       let value_list = (List.map (expression' runtime) (value expr_list)) in
+		       let value_list = (List.map (expression' runtime) expr_list) in
 		       record_as_value (List.combine label_list value_list)
      end
 
-  | TaggedValues (k, es) -> tagged_as_value k (List.map (expression' runtime) (List.map value es))
+  | TaggedValues (k, es) -> tagged_as_value k (List.map (expression' runtime) es)
 
   | Case (e, bs) ->
     branches runtime (expression' runtime e) bs
@@ -222,7 +222,7 @@ and branches runtime v = function
 
   | Branch (pat, e) :: bs -> 
      begin
-       match pat, v with
+       match (value pat), v with
        |PWildcard,_ -> expression' runtime e
        |PVariable(id),_ -> expression' (bind_pattern runtime pat v) e
        |PTuple(id_list),VTuple(val_list) -> 
@@ -260,7 +260,7 @@ and bind_pattern runtime pat v : runtime =
 	 new_runtime
        else
 	 failwith "error! cannot match Tuple pattern (not the same length)"
-    
+		  
     | PTaggedValues (k, xs), VTagged (k', vs) when k = k' ->
        if ((List.length xs) = (List.length vs)) then        
 	 let new_runtime = runtime in
