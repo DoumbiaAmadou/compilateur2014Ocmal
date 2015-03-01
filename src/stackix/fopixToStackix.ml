@@ -193,11 +193,11 @@ and expression pos env = function
     expression' env e2 @ expression' env e1 @(sigle_instruction (Target.AST.BlockCreate))
   (*failwith "Student! This is your job!"*)
   | Source.AST.FunCall (Source.AST.FunId "block_get", [e1; e2]) ->
-    expression' env e2 @ expression' env e1 @(sigle_instruction (Target.AST.BlockCreate))
+    expression' env e2 @ expression' env e1 @(sigle_instruction (Target.AST.BlockGet))
   (*failwith "Student! This is your job!"*)
 
- | Source.AST.FunCall (Source.AST.FunId "block_set", [e1; e2]) ->
-    expression' env e2 @ expression' env e1 @(sigle_instruction (Target.AST.BlockCreate))
+ | Source.AST.FunCall (Source.AST.FunId "block_set", [e1; e2 ; e3]) ->
+    expression' env e3 @ expression' env e2 @ expression' env e1 @ (sigle_instruction (Target.AST.BlockSet))
   (*failwith "Student! This is your job!"*)
 
 
@@ -256,6 +256,5 @@ and make_basic_block =
     labelled_block prefix (
       List.map (fun i -> (None, located_instruction i)) instructions
     )
-
 and located_instruction i =
   Position.unknown_pos i

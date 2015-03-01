@@ -296,14 +296,6 @@ let evaluate runtime (ast : t) =
         end 
 
  (*  failwith "Student! This is your job!" *)
-
-      | BlockCreate -> (*as_lbl (Stack.get 0 values) in  RememberLabel l  ;  Stack.pop values; 
-         Hashtbl.add blocks l [i]*)
-        begin  match (Stack.get 0 values ) , (Stack.get 1 values) with 
-         |(DInt a )  , b ->  Stack.popN 2 values; Stack.push (DLocation (Memory.allocate memory a b )) values
-         |_-> failwith " type error "
-        end 
-
       | BlockSet  -> 
       begin
         match (Stack.get 0 values) ,(Stack.get 1 values) ,(Stack.get 2 values) with 
