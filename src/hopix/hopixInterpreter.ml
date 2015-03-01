@@ -154,75 +154,155 @@ let rec evaluate runtime ast =
 and declaration runtime d =
   match Position.value d with
   | DefineValue (pat, e) ->
-       failwith "Student! This is your job!"
+    bind_pattern runtime pat (expression' runtime e)
+      (* failwith "Student! This is your job!" *)
 
-  | DefineType _ ->
-       failwith "Student! This is your job!"
+  | DefineType _ -> runtime
+      (* failwith "Student! This is your job!" *)
 
 and expression' runtime e =
   expression (position e) runtime (value e)
 
 and expression position runtime = function
-  | Fun (x, e) ->
-       failwith "Student! This is your job!"
+  | Fun (x, e) -> 
+       failwith "Student! This is your job!" 
 
-  | Apply (a, b) ->
-       failwith "Student! This is your job!"
+  | Apply (a, b) -> 
+    let v = (expression' runtime b) in
+    begin
+      match (expression' runtime a) with
+      | VClosure (env, lambda) -> 
+        begin
+         match lambda with
+          |(x, body) -> assert false (* List.combine (x, v)::env body *)
+          | _ -> assert false
+        end
+      | VPrimitive f -> f v 
+      | _ -> assert false
+    end 
+    (* failwith "Student! This is your job!" *)
 
-  | RecFuns fs ->
-       failwith "Student! This is your job!"
-
+  | RecFuns fs -> 
+  begin
+    match fs with
+    |[] -> tuple_as_value []
+    |(id, body)::tail-> assert false (* il faut rajouter *)
+  end 
+  (*  failwith "Student! This is your job!" *)
   | RecordField (e, l) ->
-    failwith "Student! This is your job!"
+    begin
+       match (expression' runtime e) with 
+       |VRecord(lv_list) -> List.assoc l lv_list
+       |_ -> failwith "this expression is not a VRecord"
+    end
+  (*  failwith "Student! This is your job!" *)
 
   | Tuple es ->
-    failwith "Student! This is your job!"
+   begin
+    match es with
+    | [] -> tuple_as_value []
+    | h::tail -> tuple_as_value (List.map (expression' runtime) es)
+  end 
 
   | Record rs ->
-    failwith "Student! This is your job!"
+  begin
+       match rs with
+       |[] -> record_as_value []
+       |(l,e)::tail -> let (label_list,expr_list) = List.split rs in
+           let value_list = (List.map (expression' runtime) expr_list) in
+           record_as_value (List.combine label_list value_list) 
+  end
+   (* failwith "Student! This is your job!" *)
 
   | TaggedValues (k, es) ->
-    failwith "Student! This is your job!"
+    tagged_as_value k (List.map (expression' runtime) es) 
+  (*  failwith "Student! This is your job!" *)
 
   | Case (e, bs) ->
-       failwith "Student! This is your job!"
+    branches runtime (expression' runtime e) bs
+     (*  failwith "Student! This is your job!" *)
 
-  | Literal l ->
-       failwith "Student! This is your job!"
+  | Literal l -> literal l
+(*  failwith "Student! This is your job!" *)
 
   | Variable x ->
-       failwith "Student! This is your job!"
+       Environment.lookup x runtime.environment 
+(*  failwith "Student! This is your job!" *)
 
   | Define (pat, ex, e) ->
-       failwith "Student! This is your job!"
+  let v = expression' runtime ex in
+    expression' (bind_pattern runtime pat v) e
+(*  failwith "Student! This is your job!" *)
 
-  | IfThenElse (c, t, f) ->
-    failwith "Student! This is your job!"
-
+  | IfThenElse (c, t, f) ->  
+  begin
+    match value_as_bool (expression' runtime c) with
+      | Some true -> expression' runtime t
+      | Some false  -> expression' runtime f
+      | None -> assert false
+  end 
+(*  failwith "Student! This is your job!" *)
 
 and branches runtime v = function
   | [] ->
-    failwith "Student! This is your job!"
+    failwith "error! branches are not exhaustive"
 
   | Branch (pat, e) :: bs ->
-    failwith "Student! This is your job!"
+    begin
+       match (value pat), v with
+       |PWildcard,_ -> expression' runtime e
+       |PVariable(id),_ -> expression' (bind_pattern runtime pat v) e
+       |PTuple(id_list),VTuple(val_list) -> 
+   if ((List.length id_list) = (List.length val_list)) then 
+     expression' (bind_pattern runtime pat v) e
+   else
+     failwith "error: this tuple doesn't match this kind of pattern"
+       
+       |PTaggedValues(tag,id_list), VTagged (tag',val_list) when tag = tag' -> 
+   if ((List.length id_list) = (List.length val_list)) then 
+     expression' (bind_pattern runtime pat v) e
+   else
+     failwith "error: this tag is not associated with this kind of pattern"
+
+       |_ -> branches runtime v bs
+     end
+(*  failwith "Student! This is your job!" *)
 
 and bind_variable runtime x v =
   { environment = Environment.bind runtime.environment x v }
+  (*  failwith "Student! This is your job!" *)
 
 and bind_pattern runtime pat v : runtime =
   match Position.value pat, v with
-    | PWildcard, _ ->
-      failwith "Student! This is your job!"
+    | PWildcard, _ -> runtime
 
-    | PVariable x, _ ->
-      failwith "Student! This is your job!"
+    | PVariable x, _ -> bind_variable runtime x v
 
     | PTuple xs, VTuple vs ->
-      failwith "Student! This is your job!"
+      if ((List.length xs) = (List.length vs)) then 
+        let new_runtime = runtime in
+        (List.map2 
+          (fun id v -> new_runtime = (bind_variable new_runtime id v))
+          xs
+          vs
+        );
+        new_runtime
+      else
+        failwith "error! cannot match Tuple pattern (not the same length)"
+        (*  failwith "Student! This is your job!" *)
 
-    | PTaggedValues (k, xs), VTagged (k', vs) ->
-      failwith "Student! This is your job!"
+    | PTaggedValues (k, xs), VTagged (k', vs) when k = k' ->
+      if ((List.length xs) = (List.length vs)) then        
+        let new_runtime = runtime in
+        (List.map2 
+          (fun id v -> new_runtime = (bind_variable new_runtime id v))
+          xs
+          vs
+        );
+        new_runtime
+      else
+        failwith "error! cannot match TaggedValue pattern (not the same length)"
+        (*  failwith "Student! This is your job!" *)
 
     | _, _ ->
       assert false (* By typing. *)

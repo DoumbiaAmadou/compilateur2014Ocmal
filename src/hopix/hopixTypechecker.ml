@@ -157,7 +157,6 @@ end = struct
         | _ -> assert false (* Because of the predicate below. *)
     with Not_found ->
       raise (UnboundLabel l)
-  
   exception UnboundTag of tag
 
   let lookup_tagged_union_type_from_tag env t =
@@ -231,11 +230,10 @@ let rec get_standard_typ typ : standard_typ = match typ with
     |[] -> ()
     |(a,b)::tail -> standard_mgu ((get_standard_typ a),(get_standard_typ b));
         mgu tail
-
+    end
 
 
         (*                             END       MGU part                      *)
-
 
 type typing_environment = TypingEnvironment.t
 
@@ -244,7 +242,6 @@ let initial_typing_environment () =
   TypingEnvironment.empty (* TODO: add the primitive functions here *)
 
 let rec newVariablelist s = if s =0 then [] else  newtyvar()::newlistvariable (s-1) 
-
 
 (** [typecheck tenv ast] checks that [ast] is a well-formed program
     under the typing environment [tenv]. *)
@@ -306,12 +303,13 @@ and newlistvariable List.length li =
    *)
 
 
-
   (** [infer_expression_type tenv e] returns the type of the expression
       [e] under the environment [tenv] if [e] is well-typed. *)
+
   and infer_expression_type tenv e =
     let pos = Position.position e in
     match Position.value e with
+<<<<<<< HEAD
       | Fun (x, e) -> let tyx = match snd x with
                       |Some(ty) -> ty 
                       |None ->  newtyvar() 
@@ -334,26 +332,6 @@ and newlistvariable List.length li =
            failwith "Student! This is your job!"
 
       | IfThenElse (c, te, fe) ->
-         (* match   infer_expression_type 
-
-             Source.AST.IfThenElse (c, t, f) ->
-    (* Label and block for the expression for the then*)
-    let lt, bt = labelled_block "true" (expression' env t) in
-    (* Label and block for the expression for the else *)
-    let lf, bf = labelled_block "false" (expression' env f) in
-    (* Label and block corresponding to the end *)
-    let le, be = make_basic_block "end" [Target.AST.(Comment "end")] in
-    let end_jump = single_instruction (Target.AST.(Jump le)) in 
-    expression' env c
-    @ single_instruction (Target.AST.(ConditionalJump (lt,lf)))
-    @ bt
-    @ end_jump
-    @ bf
-    @ end_jump
-    @ be 
-
-    
-        *) 
            failwith "Student! This is your job!"
 
       | Tuple es ->
