@@ -310,7 +310,7 @@ let evaluate runtime (ast : t) =
           |(DLocation l),(DInt i ), x  -> Memory.write (Memory.dereference memory l)  i x ; Stack.popN 3 values  
           |_ -> failwith "block, int  and x not in the stack "
       end
-       
+      
       (* failwith "Student! This is your job!" *)
       | BlockGet -> 
         begin  
@@ -326,7 +326,7 @@ let evaluate runtime (ast : t) =
       with Not_found -> error ("Unbound label " ^ x)
     in
     execute_block block
-
+  
   and binop = function
     | Add -> arith_binop ( + )
     | Mul -> arith_binop ( * )
