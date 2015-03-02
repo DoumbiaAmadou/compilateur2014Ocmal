@@ -123,7 +123,10 @@ let rec translate p env =
 
 and bind_variable env x =
   { env with variables = x :: env.variables }
-
+and bind_fun_formals env idfun f =
+  { env with function_formals = (idfun,f)::env.function_formals}
+and bind_fun_label env idfun l =
+  { env with function_labels = (idfun,l)::env.function_labels}
 
 and declaration env = function
   | Source.AST.DefineValue (x, e) -> Target.AST.(
@@ -141,19 +144,15 @@ and declaration env = function
     let l, block = labelled_block i instructions in
     (** The variable is inserted in the environment. *)
     let env = bind_variable env x in
-    (env, BeforeExit l, block)
+    (env, BeforeExit l, block))
   
 
-  | Source.AST.DefineFunction (f, xs, e) ->
-      let env = List.fold_left (fun env x -> bind_variable env x) env xs in 
-      let instructions = expression' env e 
-        @ (single_instruction UJump) (* returné là ou j'étais*)
-        in
-      let lf,bf = labelled_block "funlabel" instructions in
-      let env = { env with function_labels = (f, lf)::env.function_labels} in 
-      let env ={ env with function_formals = (f, xs)::env.function_formals} bind_fun_formals env (f, xs) in
-      (env, AfterExit lf, bf)
-(*    failwith "Student! This was your job!" *)
+  | Source.AST.DefineFunction (f, lesformals, e) ->
+      let env = List.fold_left (fun env x -> bind_variable env x) env lesformals in 
+      let instructions = (expression' env e ) @ (single_instruction UJump) in
+      let l,b =labelled_block "funlabel" instructions in
+        ((bind_fun_label env (Position.value f) l), AfterExit l, b)
+  (*    failwith "Student! This was your job!" *)
 
   (** [expression pos env e] compiles [e] into a block of Stackix
     instructions that *does not* start with a label. *)
@@ -166,6 +165,7 @@ and expression pos env = function
     single_instruction (Target.AST.GetVariable idx)
 
   | Source.AST.Define (x, e1, e2) ->
+
     let Source.AST.Id x as i = Position.value x in
     expression' env e1
     @ single_instruction (Target.AST.(Define (Id x)))
@@ -175,45 +175,59 @@ and expression pos env = function
   | Source.AST.IfThenElse (c, t, f) -> (*	expression' (bind_variable env i) e2 *)
    let label1 ,block1 = labelled_block "true" (expression' env t) in
    let label2 , block2 = labelled_block "false" (expression' env f) in 
-   let label3 , block3 = labelled_block "end" [Target.AST.Comment "end"] in 
-   let continuis = single_instruction(Target.AST.Jump l3) in 
-   let conditionalJumper  = sigle_instruction(Target.AST.ConditionalJump(label1 , label2) in
+   let label3 , block3 = labelled_block "end" (single_instruction (Target.AST.Comment "end")) in 
+   let continuis = single_instruction (Target.AST.Jump label3) in 
+   let conditionalJumper  = single_instruction (Target.AST.ConditionalJump(label1,label2)) in
     expression' env c @ conditionalJumper @block1@ continuis @ block2 @ continuis @block3 
-(* es ce qu'on peut optimiser en enlevant le continus avant block3  *)
-(*  failwith "Student! This is your job!" *)
+  (* est ce qu'on peut optimiser en enlevant le continus avant block3  *)
+  (*  failwith "Student! This is your job!" *)
 
   | Source.AST.FunCall (Source.AST.FunId f, [e1; e2])
       when is_binop f
     ->
-      expression' env e2
-    @ expression' env e1
-    @ (single_instruction (Target.AST.Binop (binop f)))
+    expression' env e2 @ expression' env e1 @ (single_instruction (Target.AST.Binop (binop f)))
 
   | Source.AST.FunCall (Source.AST.FunId "block_create", [e1; e2]) ->
-    expression' env e2 @ expression' env e1 @(sigle_instruction (Target.AST.BlockCreate))
+    expression' env e2 @ expression' env e1 @(single_instruction (Target.AST.BlockCreate))
   (*failwith "Student! This is your job!"*)
   | Source.AST.FunCall (Source.AST.FunId "block_get", [e1; e2]) ->
-    expression' env e2 @ expression' env e1 @(sigle_instruction (Target.AST.BlockGet))
+    expression' env e2 @ expression' env e1 @(single_instruction (Target.AST.BlockGet))
   (*failwith "Student! This is your job!"*)
 
  | Source.AST.FunCall (Source.AST.FunId "block_set", [e1; e2 ; e3]) ->
-    expression' env e3 @ expression' env e2 @ expression' env e1 @ (sigle_instruction (Target.AST.BlockSet))
+    expression' env e3 @ expression' env e2 @ expression' env e1 @ (single_instruction (Target.AST.BlockSet))
   (*failwith "Student! This is your job!"*)
 
 
-  | Source.AST.FunCall (f, actuals) ->
-    failwith "Student! This is your job!"
+  | Source.AST.FunCall (f, actuals) ->  
+  let formals =lookup_function_formals f env in  
+  let blockList =  
+  List.map2 (fun (Source.AST.Id id)  ace -> 
+    (expression' env ace)
+    @ single_instruction (Target.AST.Define (Target.AST.Id id))
+  ) formals  actuals in 
+  let blockList =  List.flatten blockList in 
+  let labelformals = lookup_function_label f env in 
+ let l ,bc  = make_basic_block "fun" [Target.AST.Comment "fun"] in 
+ let blockUndefine =  List.map (fun (Source.AST.Id id)->
+                  single_instruction (Target.AST.Undefine )) formals in 
+  let blockUndefine =  List.flatten blockUndefine in 
+  blockList 
+  @(single_instruction (Target.AST.(RememberLabel l)))
+  @(single_instruction ( Target.AST.Jump labelformals)) 
+  @bc
+  @blockUndefine
+
+  
+ 
 
 and literal env = function
   | Source.AST.LInt x -> Target.AST.Remember x
-
 and expression' env e =
   expression (Position.position e) env (Position.value e)
-
 and is_binop = function
   | "+" | "-" | "*" | "/" | "<" | ">" | "=" | "<=" | ">=" -> true
   | _ -> false
-
 and binop = function
   | "+" -> Target.AST.Add
   | "-" -> Target.AST.Sub

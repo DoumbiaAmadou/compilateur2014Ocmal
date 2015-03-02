@@ -4,29 +4,11 @@ open HopixAST
 
 (** Type checker error message producer. *)
 let error = Error.error "during type checking"
-let incrID : int ref = ref 0 
 
 (** Basic types. *)
 let tyint  = TyBase (TId "int", [])
 let tybool = TyBase (TId "bool", [])
 
- type  standard_typ = 
-    |STInteger
-    |STBoolean
-    |STCstTyp of string * standard_typ list
-    |STArr of standard_typ * standart_typ
-    |STVar of standard_typvar
-    |STUnit
-
-type standard_typvar =
-    {
-      id : string;
-      mutable content : standard_typ option
-    }
-let newtyvar () : tyvar =
-   incrID := !incrID+1 ;  
-   let id = !incrID in
-   {id = string_of_int(id) ;content= None}
 (** During typechecking, we thread an environment that contains
     the type of variables and the type definitions. *)
 module TypingEnvironment : sig
@@ -157,6 +139,7 @@ end = struct
         | _ -> assert false (* Because of the predicate below. *)
     with Not_found ->
       raise (UnboundLabel l)
+
   exception UnboundTag of tag
 
   let lookup_tagged_union_type_from_tag env t =
@@ -178,70 +161,14 @@ end = struct
     match lookup_type_definition env t with
       | TaggedUnionTy ks -> ks
       | _ -> raise (NotTaggedUnion t)
-    end
-  (*                             begin       MGU part                      *)
 
-let rec get_standard_typ typ : standard_typ = match typ with
-    |TyBase(tid,tList) -> begin
-        match tid with
-        |TId("int") -> STInteger
-        |TId("bool") -> STBoolean
-        |TId(_) -> begin
-             match tList with
-             |[] -> failwith "error: TyBase type undefined!"
-             |_ -> failwith "error: TyBase type undefined! (TODO)"
-        end
-    |TyTuple(typ_list) -> STCstTyp("tuple",(get_standard_typ_list typ_list))
-    |TyArrow(t1,t2) -> STArr((get_standard_typ t1),(get_standard_typ t2))
-   end       
-
-  let rec get_standard_typ_list typ_list : standard_typ list = match typ_list with
-    |[] -> []
-    |a::tail -> get_standard_typ(a)::(get_standard_typ_list tail)
-    
- let rec standard_mgu list : unit = match list with
-    |[] -> ()
-    |(a,b)::tail -> match a, b with
-        |STInteger, STInteger -> ()
-        |STBoolean, STBoolean -> ()
-        |STUnit,STUnit -> ()
-        |STCstTyp(id1,st_typ_list1), STCstTyp(id2,st_typ_list2) -> 
-          if (id1<>id2) then failwith "error: not the same type!"
-          else
-      begin
-        match st_typ_list1, st_typ_list2 with
-        |[], [] -> ()
-        |[t1],[t2] -> standard_mgu ((t1,t2)::tail)
-        |t1::tail1, t2::tail2 -> standard_mgu ((t1,t2)::(StCstTyp(id1,tail1),StCstTyp(id2,tail2))::tail);
-        |_, _ -> failwith "error: not the same type!"
-      end                  
-        |STArr(t1,t2),STArr(t3,t4) -> standard_mgu ((t1,t3)::(t2,t4)::tail)
-        |STVar(tv1),STVar(tv2) when tv1.id = tv2.id -> standard_mgu tail
-        |TVar(tv1),t | t,TVar(tv1) ->
-            (*rajouter verif tv1 n'appartient pas a t*)
-            begin
-              match tv1.content with
-              |None -> tv1.content <- Some(b); standard_mgu tail
-              |Some(t1) -> standard_mgu ((t1,b)::tail)
-            end
-        |_ -> failwith "error: not the same type!"
-
- let rec mgu list : unit = match list with
-    |[] -> ()
-    |(a,b)::tail -> standard_mgu ((get_standard_typ a),(get_standard_typ b));
-        mgu tail
-    end
-
-
-        (*                             END       MGU part                      *)
+end
 
 type typing_environment = TypingEnvironment.t
 
 (** The initial environment contains the type of the primitive functions. *)
 let initial_typing_environment () =
   TypingEnvironment.empty (* TODO: add the primitive functions here *)
-
-let rec newVariablelist s = if s =0 then [] else  newtyvar()::newlistvariable (s-1) 
 
 (** [typecheck tenv ast] checks that [ast] is a well-formed program
     under the typing environment [tenv]. *)
@@ -252,82 +179,47 @@ let typecheck tenv ast =
 
   and definition tenv def =
     match Position.value def with
-      | DefineValue (p, e) -> 
+      | DefineValue (p, e) ->
         define_value tenv p e
-      | DefineType (t, param, tdef) ->
+
+      | DefineType (t, _, tdef) ->
         let tenv' = TypingEnvironment.bind_type_definition tenv t (TaggedUnionTy []) in
-        well_formed_type_definition (
-        Position.position def) tenv' tdef;
+        well_formed_type_definition (Position.position def) tenv' tdef;
         TypingEnvironment.bind_type_definition tenv t tdef
 
   and well_formed_type_definition pos tenv = function
-    | RecordTy ltys -> check_unicity pos ltys " Record" ;
-         List.map (fun (Label x,y) -> lookup tenv (well_formed_type_definition pos tenv y) ) ltys  
-         (*     failwith "Student! This was your job!" *)
+    | RecordTy ltys ->
+         failwith "Student! This is your job!"
 
-    | TaggedUnionTy ktys -> 
-              check_unicity pos ltys " TaggedUnionTy" ; 
-              List.map (fun (Constructor x,y) -> lookup tenv (well_formed_type_definition pos tenv y) ) ktys  
-              (*failwith "Student! This was your job!" *)
+    | TaggedUnionTy ktys ->
+         failwith "Student! This is your job!"
 
-      
-  
 
   (** [define_value tenv p e] returns a new environment that associates
       a type to each of the variables bound by the pattern [p]. *)
-  
   and define_value tenv p e =
-    
-
-  match (p , infer_expression_type tenv e ) with 
-  | PWilCard , _  -> ()  
-  | (PVariable i), t   -> bind  tenv i  t 
-  |(PTuple li) , t  -> let a = (newlistvariable List.length li ) in  
-     mgu(PTuple(a) ,t) ;  
-     bind tenv li  PTuple(a)   
-  | (PTuple  l1) , t -> if ( List.length l1  = List.length l2) then  bind tenv i t 
-  | (PTaggedValues  il) , u ->  List.fold_left (bind tenv e) p.variable 
-  
-  (* to change *)
-
- (* failwith " student this your job" * )
-
-  | PTuple  l  ->  PTuple l
-  | PTaggedValues  il
-  List.fold_left (bind tenv e) p.variables
- *
- match p with 
-  |pWilCard  ->   
-
-and newlistvariable List.length li = 
-   *)
-
+       failwith "Student! This is your job!"
 
   (** [infer_expression_type tenv e] returns the type of the expression
       [e] under the environment [tenv] if [e] is well-typed. *)
-
   and infer_expression_type tenv e =
     let pos = Position.position e in
     match Position.value e with
-<<<<<<< HEAD
-      | Fun (x, e) -> let tyx = match snd x with
-                      |Some(ty) -> ty 
-                      |None ->  newtyvar() 
-                    in  TyArrow( tyx ,(infer_expression_type  (bind (fst x)  tyx tenv) e))        
-      | RecFuns fs ->
-       let newEnv =    List.fold_left (fun x y -> bind (fst y)  newtyvar()  x )   env fs 
-       in List.fold_left  (fun x y  -> mgu( lookup (fst y)  , infer_expression_type x snd y )) newEnv fs 
-
- 
-        (*   failwith "Student! This is your job!" *)
-      | Apply (a, b) -> 
-        let et1 = w context t1  in 
-        let et2 = w context t2 in 
+      | Fun (x, e) ->
            failwith "Student! This is your job!"
+
+      | RecFuns fs ->
+           failwith "Student! This is your job!"
+
+      | Apply (a, b) ->
+           failwith "Student! This is your job!"
+
       | Literal l ->
            failwith "Student! This is your job!"
+
       | Variable x ->
-           lookup tenv x
+           failwith "Student! This is your job!"
+
       | Define (p, e1, e2) ->
            failwith "Student! This is your job!"
 
@@ -408,12 +300,6 @@ and newlistvariable List.length li =
         if List.length ktys <> 1 then
           error (Position.position pat) "This pattern is not irrefutable."
 
-    (*vérification de l'unicité des elements de la list*)
-and checkList pos ls what ->
-        let ls = List.(sort (fun (l1, _) (l2, _) -> compare l1 l2) ls) in
-        let ls = fst (List.split ls) in
-        if not (ExtStd.List.all_distinct ls) then
-          error pos (Printf.sprintf "Each %s must appear exactly once." what)
   and check_variable tenv ty x =
     TypingEnvironment.bind tenv x ty
 
