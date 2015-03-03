@@ -41,8 +41,10 @@ let initial_environment () = {
 
 (** [lookup_function_label f env] returns the label of [f] in [env]. *)
 let lookup_function_label f env =
+  try 
   List.assoc f env.function_labels
-
+with Not_found  -> let name = (fun (Source.AST.FunId x) -> x ) f in
+failwith (""^name^": function name isn't in the env.labs") 
 (** [lookup_function_formals f env] returns the formal arguments of
     [f] in [env]. *)
 let lookup_function_formals f env =
@@ -148,10 +150,21 @@ and declaration env = function
   
 
   | Source.AST.DefineFunction (f, lesformals, e) ->
-      let env = List.fold_left (fun env x -> bind_variable env x) env lesformals in 
-      let instructions = (expression' env e ) @ (single_instruction UJump) in
-      let l,b =labelled_block "funlabel" instructions in
+     
+      let idlis = List.map (fun (Source.AST.Id x) -> (Target.AST.Id x)) lesformals in 
+      let env = bind_fun_formals env (Position.value f) lesformals in 
+      let undefinerblock = List.map (fun a -> (single_instruction Undefine)) lesformals in
+      let instructions = (expression' env e) 
+      @ (List.flatten undefinerblock)
+      @ (single_instruction Swap)
+      @ (single_instruction UJump) in
+      let funname = (fun (Source.AST.FunId c)->c ) (Position.value f)  in 
+      let l,b =labelled_block funname instructions in
         ((bind_fun_label env (Position.value f) l), AfterExit l, b)
+
+ 
+
+
   (*    failwith "Student! This was your job!" *)
 
   (** [expression pos env e] compiles [e] into a block of Stackix
@@ -218,7 +231,8 @@ and expression pos env = function
   @bc
   @blockUndefine
 
-  
+  |Source.AST.UnknownFunCall (a, b ) ->
+ failwith " it's forbid to call a unknow function"
  
 
 and literal env = function
@@ -255,7 +269,7 @@ and labelled_block =
   let c = ref 0 in
   fun prefix instructions ->
     match label_of_block instructions with
-      | None ->
+      | None -> 
         let l = incr c; Target.AST.Label (prefix ^ string_of_int !c) in
         (l, label_block l instructions)
       | Some l ->

@@ -76,6 +76,7 @@ module Environment : sig
   val lookup  : identifier -> t -> value
   val last    : t -> (identifier * value * t) option
   val print   : t -> string
+  
 end = struct
   type t = (identifier * value) list
 
@@ -109,9 +110,14 @@ end = struct
     )
 
 end
+type func= {
+  arglist : formals; (* The parameter(s) of the function *)  
+  expression: expression located; (* The body of the function *)
+}
 
 type runtime = {
   environment : Environment.t;
+   funcs    : (function_identifier * func) list;
 }
 
 type observable = {
@@ -120,6 +126,7 @@ type observable = {
 
 let initial_runtime () = {
   environment = Environment.initial;
+  funcs = []
 }
 
 (** 640k ought to be enough for anybody -- B.G. *)
@@ -134,9 +141,18 @@ and declaration runtime = function
   | DefineValue (i, e) ->
     let v = expression' runtime e in
     let i = Position.value i in
-    { environment = Environment.bind runtime.environment i v }
-  | DefineFunction _ ->
-    runtime
+    { environment = Environment.bind runtime.environment i v ; 
+     funcs = runtime.funcs
+    }
+
+  | DefineFunction (f , formals,e)-> 
+    let funname = Position.value f in 
+    let myfunc = (funname, {arglist=formals; expression =e} ) in  
+    { environment = runtime.environment ; 
+     funcs = myfunc :: runtime.funcs
+    }  
+    
+  
 
 and expression' runtime e =
   expression (position e) runtime (value e)
@@ -156,8 +172,7 @@ and expression position runtime = function
 			  end 
   | Define (x, ex, e) ->
     let v = expression' runtime ex in
-    let runtime =
-     { environment = Environment.bind runtime.environment (Position.value x) v }
+    let runtime ={  runtime with environment = Environment.bind runtime.environment (Position.value x) v }
     in
     expression' runtime e
 
