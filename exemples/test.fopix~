@@ -1,0 +1,2 @@
+def fu(x)=x+1;
+val c = fu(4) 

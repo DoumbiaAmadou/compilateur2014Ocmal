@@ -150,9 +150,12 @@ and declaration env = function
   
 
   | Source.AST.DefineFunction (f, lesformals, e) ->
-     
-      let idlis = List.map (fun (Source.AST.Id x) -> (Target.AST.Id x)) lesformals in 
+    (* 
+      let idlis = 
+          List.map (fun (Source.AST.Id x) -> (Target.AST.Id x))
+          lesformals in *)
       let env = bind_fun_formals env (Position.value f) lesformals in 
+      let env = List.fold_left (fun env var -> bind_variable env var ) env lesformals in 
       let undefinerblock = List.map (fun a -> (single_instruction Undefine)) lesformals in
       let instructions = (expression' env e) 
       @ (List.flatten undefinerblock)
@@ -207,7 +210,7 @@ and expression pos env = function
     expression' env e2 @ expression' env e1 @(single_instruction (Target.AST.BlockGet))
   (*failwith "Student! This is your job!"*)
 
- | Source.AST.FunCall (Source.AST.FunId "block_set", [e1; e2 ; e3]) ->
+ |Source.AST.FunCall (Source.AST.FunId "block_set", [e1; e2 ; e3]) ->
     expression' env e3 @ expression' env e2 @ expression' env e1 @ (single_instruction (Target.AST.BlockSet))
   (*failwith "Student! This is your job!"*)
 
@@ -220,16 +223,16 @@ and expression pos env = function
     @ single_instruction (Target.AST.Define (Target.AST.Id id))
   ) formals  actuals in 
   let blockList =  List.flatten blockList in 
-  let labelformals = lookup_function_label f env in 
+  let labelfunc = lookup_function_label f env in 
  let l ,bc  = make_basic_block "fun" [Target.AST.Comment "fun"] in 
  let blockUndefine =  List.map (fun (Source.AST.Id id)->
                   single_instruction (Target.AST.Undefine )) formals in 
   let blockUndefine =  List.flatten blockUndefine in 
   blockList 
   @(single_instruction (Target.AST.(RememberLabel l)))
-  @(single_instruction ( Target.AST.Jump labelformals)) 
+  @(single_instruction ( Target.AST.Jump labelfunc)) 
   @bc
-  @blockUndefine
+  
 
   |Source.AST.UnknownFunCall (a, b ) ->
  failwith " it's forbid to call a unknow function"

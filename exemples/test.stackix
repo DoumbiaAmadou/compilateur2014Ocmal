@@ -1,0 +1,14 @@
+     c3: remember 4
+         define x
+         remember @fun2
+         jump fu1
+   fun2: ;; fun
+         define c
+         jump _exit_4
+_exit_4: exit
+    fu1: remember 1
+         getvariable 0
+         add
+         undefine
+         swap
+         ujump
