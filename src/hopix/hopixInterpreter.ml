@@ -165,7 +165,7 @@ and expression' runtime e =
 
 and expression position runtime = function
   | Fun (x, e) -> 
-       failwith "Student! This is your job!" 
+       VClosure (runtime.environment, (x, e))
 
   | Apply (a, b) -> 
     let v = (expression' runtime b) in
@@ -183,11 +183,13 @@ and expression position runtime = function
     (* failwith "Student! This is your job!" *)
 
   | RecFuns fs -> 
-  begin
-    match fs with
-    |[] -> tuple_as_value []
-    |(id, body)::tail-> assert false (* il faut rajouter *)
-  end 
+  let localEnv = Environment.empty 
+  in let to_fun = fun (id_loc, e) -> 
+  Position.with_pos (Position.position id_loc) (Fun ((Position.value id_loc), e)) 
+  in let eval_fun = fun f -> expression' runtime (to_fun f) 
+  in let funs = List.map (fun f -> eval_fun f) fs 
+  in VTuple funs
+
   (*  failwith "Student! This is your job!" *)
   | RecordField (e, l) ->
     begin
