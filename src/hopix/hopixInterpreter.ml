@@ -134,9 +134,60 @@ type observable = {
   new_environment : Environment.t;
 }
 
+let binop = function
+  | "+" -> (+)
+  | "-" -> (-)
+  | "*" -> ( * )
+  | "/" -> (/)
+  | _ -> assert false 
+
+let is_binop = function
+  | "+" | "-" | "*" | "/" -> true
+  | _ -> false 
+    
+let cmpop = function
+  | "=" -> (=)
+  | "<" -> (<)
+  | "<=" -> (<=)
+  | ">" -> (>)
+  | ">=" -> (>=)
+  | _ -> assert false 
+          
+let is_cmpop = function
+  | "=" | "<" | "<=" | ">" | ">=" -> true
+  | _ -> false
+
+exception UnknownPrimitive of string 
+
+let extend_primitive runtime l =
+  let add_primitive runtime primitive =
+    let id = Id primitive in 
+    Environment.bind runtime id 
+      (VPrimitive 
+        (fun v1 -> match v1 with
+           | VInt x -> VPrimitive 
+              (fun v2 -> match v2 with
+               | VInt y -> 
+                  if is_binop primitive then
+                    let op = binop primitive in VInt (op x y)
+                  else if is_cmpop primitive then
+                     let op = cmpop primitive in VBool (op x y)
+                  else raise (UnknownPrimitive primitive)            
+               | _ -> failwith "Not an integer." 
+              )
+           | _ -> failwith "Not an integer"
+         )
+      ) in 
+  List.fold_left add_primitive runtime l 
+
+let primitives =
+  let op = ["+";"-";"*";"/";"=";"<";"<=";">"; ">="] in
+  extend_primitive (Environment.empty) op
+
 (** [primitives] is an environment that contains the implementation
     of all primitives (+, <, ...). *)
-let primitives = Environment.empty (* "Student! This is your job!" *)
+(*let primitives = Environment.empty *)
+(* "Student! This is your job!" *)
 
 let initial_runtime () = {
   environment = primitives;
@@ -171,10 +222,12 @@ and expression position runtime = function
     let v = (expression' runtime b) in
     begin
       match (expression' runtime a) with
-      | VClosure (env, lambda) -> 
+      | VClosure (env, (x, e)) -> 
         begin
-         match lambda with
-          |(x, body) -> assert false (* List.combine (x, v)::env body *)
+         match x with
+          |(args, _) -> 
+            let runtime1 = bind_variable {environment=env} args v in
+            expression' runtime1 e
           | _ -> assert false
         end
       | VPrimitive f -> f v 
