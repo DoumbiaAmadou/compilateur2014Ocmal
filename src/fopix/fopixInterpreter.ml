@@ -110,6 +110,7 @@ end = struct
     )
 
 end
+
 type func= {
   arglist : formals; (* The parameter(s) of the function *)  
   expression: expression located; (* The body of the function *)
@@ -117,7 +118,7 @@ type func= {
 
 type runtime = {
   environment : Environment.t;
-   funcs    : (function_identifier * func) list;
+   funcs    : (function_identifier * func) list
 }
 
 type observable = {
