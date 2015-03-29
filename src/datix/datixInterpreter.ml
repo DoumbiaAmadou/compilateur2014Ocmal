@@ -192,25 +192,15 @@ and expression position runtime = function
        |h::tail -> tuple_as_value (List.map (expression' runtime) es)
      end
 
-  | Record rs ->
-     begin
-       match rs with
-       |[] -> record_as_value []
-       |(l,e)::tail -> let (label_list,expr_list) = List.split rs in
-		       let value_list = (List.map (expression' runtime) expr_list) in
-		       record_as_value (List.combine label_list value_list)
-     end
+  | Record rs -> record_as_value (List.map (fun (l,e) -> (l,expression' runtime e)) rs)
 
   | TaggedValues (k, es) -> tagged_as_value k (List.map (expression' runtime) es)
 
-  | Case (e, bs) ->
-    branches runtime (expression' runtime e) bs
+  | Case (e, bs) -> branches runtime (expression' runtime e) bs
 
-  | Literal l ->
-    literal l
+  | Literal l -> literal l
 
-  | Variable x ->
-    Environment.lookup x runtime.environment
+  | Variable x -> Environment.lookup x runtime.environment
 
   | Define (pat, ex, e) ->
     let v = expression' runtime ex in

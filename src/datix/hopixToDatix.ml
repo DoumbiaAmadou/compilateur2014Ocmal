@@ -118,9 +118,9 @@ module VariableSet = Set.Make (struct
     let compare (S.Id s1) (S.Id s2) = String.compare s1 s2
 end)
 
-let free_variables : S.expression -> S.identifier list =
-  fun e -> failwith "Student! This is your job!"
-
+let free_variables : S.expression -> S.identifier list = function
+| S.Literal _ -> []
+| S.Variable x -> failwith "Student! This is your job!"
 
 (** [closure_conversion p] turns a Hopix program [p] that contains
     anonymous functions into a Hopix program [p'] where each anonymous
@@ -276,16 +276,16 @@ let hoist : HopixAST.t -> DatixAST.t =
       into a compiled expression [e]. *)
     and expression_aux pos = function
       | S.Literal l ->
-          failwith "Student! This is your job!"
+          T.Literal (literal l)
 
       | S.Variable (S.Id x) ->
-         failwith "Student! This is your job!"
+         T.Variable(T.Id x)
 
       | S.Define (p, e1, e2) ->
            failwith "Student! This is your job!"
 
       | S.Tuple es ->
-           failwith "Student! This is your job!"
+        T.Tuple (List.map (Position.with_pos pos) (List.map (expression_aux pos) (List.map Position.value es)))
 
       | S.Record rs ->
            failwith "Student! This is your job!"
@@ -300,7 +300,7 @@ let hoist : HopixAST.t -> DatixAST.t =
        failwith "Student! This is your job!"
 
       | S.Case (e, bs) ->
-          failwith "Student! This is your job!"
+          T.Case(Position.with_pos pos (expression_aux pos (Position.value e)), List.map branch bs )
 
       | S.Apply (e1, e2) as e ->
           failwith "Student! This is your job!"
@@ -317,7 +317,10 @@ let hoist : HopixAST.t -> DatixAST.t =
       T.LInt l
 
   and branch (S.Branch (p, e)) =
-       failwith "Student! This is your job!"
+    let exp =expression_aux (Position.position e) (Position.value e) in 
+      T.Branch( pattern (Position.position p) p, 
+        Position.with_pos (Position.position e) exp
+     )
 
   and pattern pos p =
        failwith "Student! This is your job!"
