@@ -153,7 +153,8 @@ and declaration env = function
     (* 
       let idlis = 
           List.map (fun (Source.AST.Id x) -> (Target.AST.Id x))
-          lesformals in *)
+          lesformals in 
+    *)
       let env = bind_fun_formals env (Position.value f) lesformals in 
       let env = List.fold_left (fun env var -> bind_variable env var ) env lesformals in 
       let undefinerblock = List.map (fun a -> (single_instruction Undefine)) lesformals in
@@ -164,10 +165,6 @@ and declaration env = function
       let funname = (fun (Source.AST.FunId c)->c ) (Position.value f)  in 
       let l,b =labelled_block funname instructions in
         ((bind_fun_label env (Position.value f) l), AfterExit l, b)
-
- 
-
-
   (*    failwith "Student! This was your job!" *)
 
   (** [expression pos env e] compiles [e] into a block of Stackix
@@ -196,7 +193,7 @@ and expression pos env = function
    let conditionalJumper  = single_instruction (Target.AST.ConditionalJump(label1,label2)) in
     expression' env c @ conditionalJumper @block1@ continuis @ block2 @ continuis @block3 
   (* est ce qu'on peut optimiser en enlevant le continus avant block3  *)
-  (*  failwith "Student! This is your job!" *)
+  (*  failwith "Student! This was your job!" *)
 
   | Source.AST.FunCall (Source.AST.FunId f, [e1; e2])
       when is_binop f
@@ -204,7 +201,9 @@ and expression pos env = function
     expression' env e2 @ expression' env e1 @ (single_instruction (Target.AST.Binop (binop f)))
 
   | Source.AST.FunCall (Source.AST.FunId "block_create", [e1; e2]) ->
-    expression' env e2 @ expression' env e1 @(single_instruction (Target.AST.BlockCreate))
+    expression' env e2 
+    @ expression' env e1 
+    @(single_instruction (Target.AST.BlockCreate))
   (*failwith "Student! This is your job!"*)
   | Source.AST.FunCall (Source.AST.FunId "block_get", [e1; e2]) ->
     expression' env e2 @ expression' env e1 @(single_instruction (Target.AST.BlockGet))
@@ -218,8 +217,8 @@ and expression pos env = function
   | Source.AST.FunCall (f, actuals) ->  
   let formals =lookup_function_formals f env in  
   let blockList =  
-  List.map2 (fun (Source.AST.Id id)  ace -> 
-    (expression' env ace)
+  List.map2 (fun (Source.AST.Id id)  vals -> 
+    (expression' env vals)
     @ single_instruction (Target.AST.Define (Target.AST.Id id))
   ) formals  actuals in 
   let blockList =  List.flatten blockList in 
