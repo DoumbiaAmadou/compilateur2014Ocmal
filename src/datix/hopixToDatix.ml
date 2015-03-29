@@ -222,10 +222,14 @@ let closure_conversion : HopixAST.t -> HopixAST.t = HopixAST.(
 
 
   and branch env (Branch (p, e)) =
-       failwith "Student! This is your job!"
+    Branch (p,expression_aux (bind_pattern env p) (Position.position e) (Position.value e))
 
   and bind_pattern env p =
-       failwith "Student! This is your job!"
+    match Position.value p with
+    | PWildcard -> env
+    | PVariable v -> bind env v (Variable v)
+    | PTuple t -> List.fold_left (fun env x -> bind env x (Variable x)) env t
+    | PTaggedValues (k, xs) -> List.fold_left (fun env x -> bind env x (Variable x)) env xs
 
 
   in

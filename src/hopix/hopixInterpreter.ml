@@ -233,18 +233,26 @@ and expression position runtime = function
     end 
 
   | RecFuns fs -> 
-  let localEnv = Environment.empty 
-  in let to_fun = fun (id_loc, e) -> 
-  Position.with_pos (Position.position id_loc) (Fun ((Position.value id_loc), e)) 
-  in let eval_fun = fun f -> expression' runtime (to_fun f) 
-  in let funs = List.map (fun f -> eval_fun f) fs 
-  in VTuple funs
+  (* Associated the function identifier with a default value to set later.*)
+    let localEnv =
+      List.fold_left (fun env (x,e) ->
+        let id = fst (Position.value x) in 
+        bind_variable env id (VInt 0)) runtime fs in
+    (* Creating the Closure of every recursive function *)
+        let l = List.map (fun (x, f) ->
+        let id = fst (Position.value x) in
+        let (Fun f) = Position.value f in 
+        (id, VClosure (localEnv.environment, f))) fs in
+    (* Update the environment with the good body "closure" associated to a 
+       function identifier *)
+    List.iter (fun (id, expr) -> Environment.update id localEnv.environment expr) l;
+    VTuple (List.map snd l)
 
   | RecordField (e, l) ->
     begin
        match (expression' runtime e) with 
-       |VRecord(lv_list) -> List.assoc l lv_list
-       |_ -> failwith "this expression is not a VRecord"
+       | VRecord(lv_list) -> List.assoc l lv_list
+       | _ -> failwith "this expression is not a VRecord"
     end
 
   | Tuple es ->
@@ -270,7 +278,7 @@ and expression position runtime = function
   | Literal l -> literal l
 
   | Variable x ->
-       Environment.lookup x runtime.environment 
+    Environment.lookup x runtime.environment 
 
   | Define (pat, ex, e) ->
   let v = expression' runtime ex in
