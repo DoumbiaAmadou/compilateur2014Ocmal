@@ -132,8 +132,14 @@ end
 
 type formals = identifier list
 
+type func= {
+  arglist : formals; (* The parameter(s) of the function *)  
+  expression: expression located; (* The body of the function *)
+}
+
 type runtime = {
   environment : Environment.t;
+  funcs : (function_identifier * func) list
 }
 
 type observable = {
@@ -142,6 +148,7 @@ type observable = {
 
 let initial_runtime () = {
   environment = Environment.initial;
+  funcs = []
 }
 
 (** 640k ought to be enough for anybody -- B.G. *)
@@ -155,10 +162,17 @@ let rec evaluate runtime ast =
 and declaration runtime d =
   match Position.value d with
   | DefineValue (pat, e) ->
-    bind_pattern runtime pat (expression' runtime e)
+     bind_pattern runtime pat (expression' runtime e)
 
-  | DefineFunction _ | DefineType _ ->
-    runtime
+  | DefineFunction (fun_id_loc,formals,_,body) ->
+     let fun_name = Position.value fun_id_loc in 
+     let myfunc = (fun_name, {arglist=(List.map (fun (identifier,_) -> identifier) formals); expression =body} ) in  
+     { environment = runtime.environment ; 
+       funcs = myfunc :: runtime.funcs
+     }
+       
+  | DefineType _ ->
+     runtime
 
 and expression' runtime e =
   expression (position e) runtime (value e)
@@ -205,6 +219,22 @@ and expression position runtime = function
   | FunCall (FunId s, [e1; e2]) when is_binary_primitive s ->
     binop runtime s e1 e2
 
+  | FunCall (fun_id,exp_list) ->
+     
+     let fct = List.assoc fun_id runtime.funcs
+     in
+     let new_env = List.fold_left2 (fun env param e ->
+				    Environment.bind 
+				      env
+				      param
+				      (expression' {runtime with environment = env} e)
+				   )
+				   runtime.environment
+				   fct.arglist
+				   exp_list
+     in
+     expression' {runtime with environment = new_env} fct.expression
+		 
   | IfThenElse (c, t, f) ->
      begin
        match value_as_bool (expression' runtime c) with
@@ -244,7 +274,8 @@ and branches runtime v = function
      end
 
 and bind_variable runtime x v =
-  { environment = Environment.bind runtime.environment x v }
+  { environment = Environment.bind runtime.environment x v;
+    funcs = runtime.funcs}
 
 and bind_pattern runtime pat v : runtime =
   match Position.value pat, v with

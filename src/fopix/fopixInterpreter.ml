@@ -110,6 +110,7 @@ end = struct
     )
 
 end
+
 type func= {
   arglist : formals; (* The parameter(s) of the function *)  
   expression: expression located; (* The body of the function *)
@@ -117,7 +118,7 @@ type func= {
 
 type runtime = {
   environment : Environment.t;
-   funcs    : (function_identifier * func) list;
+   funcs    : (function_identifier * func) list
 }
 
 type observable = {
@@ -202,7 +203,24 @@ and expression position runtime = function
   end
 
   | FunCall (FunId s, [e1; e2]) when is_binary_primitive s ->
-    binop runtime s e1 e2
+     binop runtime s e1 e2
+
+  | FunCall (fun_id,exp_list) ->
+
+     let fct = List.assoc fun_id runtime.funcs
+     in
+     let new_env = List.fold_left2 (fun env param e ->
+				    Environment.bind 
+				      env
+				      param
+				      (expression' {runtime with environment = env} e)
+				   )
+				   runtime.environment
+				   fct.arglist
+				   exp_list
+     in
+     expression' {runtime with environment = new_env} fct.expression
+     
 
 and binop runtime s e1 e2 =
   let v1 = expression' runtime e1 in
