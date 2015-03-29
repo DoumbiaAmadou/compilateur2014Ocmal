@@ -134,26 +134,26 @@ type observable = {
   new_environment : Environment.t;
 }
 
-let binop = function
-  | "+" -> (+)
-  | "-" -> (-)
+let arith_op_of_symbol = function
+  | "+" -> ( + )
+  | "-" -> ( - )
+  | "/" -> ( / )
   | "*" -> ( * )
-  | "/" -> (/)
   | _ -> assert false 
 
-let is_binop = function
+let is_arith_op = function
   | "+" | "-" | "*" | "/" -> true
   | _ -> false 
     
-let cmpop = function
-  | "=" -> (=)
-  | "<" -> (<)
-  | "<=" -> (<=)
-  | ">" -> (>)
-  | ">=" -> (>=)
+let cmp_op_of_symbol = function
+  | "<" -> ( < )
+  | ">" -> ( > )
+  | "<=" -> ( <= )
+  | ">=" -> ( >= )
+  | "=" -> ( = )
   | _ -> assert false 
           
-let is_cmpop = function
+let is_cmp_op = function
   | "=" | "<" | "<=" | ">" | ">=" -> true
   | _ -> false
 
@@ -168,10 +168,10 @@ let extend_primitive runtime l =
            | VInt x -> VPrimitive 
               (fun v2 -> match v2 with
                | VInt y -> 
-                  if is_binop primitive then
-                    let op = binop primitive in VInt (op x y)
-                  else if is_cmpop primitive then
-                     let op = cmpop primitive in VBool (op x y)
+                  if is_arith_op primitive then
+                    let op = arith_op_of_symbol primitive in VInt (op x y)
+                  else if is_cmp_op primitive then
+                     let op = cmp_op_of_symbol primitive in VBool (op x y)
                   else raise (UnknownPrimitive primitive)            
                | _ -> failwith "Not an integer." 
               )
