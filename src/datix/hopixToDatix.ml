@@ -118,9 +118,25 @@ module VariableSet = Set.Make (struct
     let compare (S.Id s1) (S.Id s2) = String.compare s1 s2
 end)
 
-let free_variables : S.expression -> S.identifier list = function
+(* rajouter *)
+let rec free_variables : S.expression -> S.identifier list = function
 | S.Literal _ -> []
-| S.Variable x -> failwith "Student! This is your job!"
+| S.Variable x -> [x]
+| S.Define (pat, e1, e2) -> 
+  let x = (free_variables (Position.value e1)) and y = (free_variables (Position.value e2)) 
+  in x @ y
+| S.Apply (e1, e2) -> 
+  let x = (free_variables (Position.value e1)) and y = (free_variables (Position.value e2))
+  in x @ y
+| S.Fun (x, el) -> free_variables (Position.value el)
+| S.Tuple el_lst -> List.concat (List.map (fun el -> free_variables (Position.value el)) el_lst)
+| S.RecordField (e, _) -> free_variables (Position.value e)
+| S.IfThenElse (e1, e2, e3) -> 
+  let x = (free_variables (Position.value e1)) 
+  and y = (free_variables (Position.value e2)) 
+  and z = (free_variables (Position.value e3)) 
+  in x @ y @ z
+| S.Case (el, _) -> free_variables (Position.value el)
 
 (** [closure_conversion p] turns a Hopix program [p] that contains
     anonymous functions into a Hopix program [p'] where each anonymous
